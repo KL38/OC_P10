@@ -8,3 +8,18 @@ wheels/
 
 # Virtual environments
 .venv
+
+
+# Private folder
+/brief
+/.claude
+
+# Datasets (raw API dumps + processed parquet)
+/data/
+
+# FAISS vector store (build artifact, regenerable via scripts/build_index.py)
+/vector_db/
+
+# Environment variables (API keys etc.)
+.env
+
