@@ -1,4 +1,4 @@
-"""Thin wrapper around the Mistral v2.x SDK (chat + embeddings).
+"""Thin wrapper around the Mistral Python SDK (chat + embeddings).
 
 Single place that talks to Mistral, so resilience (throttle + retry/backoff
 against the free-tier rate limits) lives in one spot. This replaces the
@@ -6,10 +6,15 @@ prototype's direct ``MistralClient`` calls, which were on the deprecated
 ``mistralai 0.4.x`` API and injected *null vectors* on failure (corrupting the
 index). Here a failed call fails cleanly after bounded retries.
 
-SDK migration (0.4.x -> v2.x), method-for-method:
+SDK migration (0.4.x -> v1.x), method-for-method:
     MistralClient(api_key=...)               -> Mistral(api_key=...)
     client.embeddings(model=, input=)        -> client.embeddings.create(model=, inputs=)
     client.chat(model=, messages=)           -> client.chat.complete(model=, messages=)
+
+We target **v1.x** (``>=1.5.1,<2``) because ragas -> instructor caps mistralai
+to ``<2``, while pydantic-ai's native ``mistral`` extra wants ``>=2``; v1.x lets
+the whole stack share one environment. The import below is version-agnostic so
+the wrapper keeps working on either layout.
 """
 
 from __future__ import annotations
@@ -18,7 +23,10 @@ import logging
 import time
 from typing import Any, Callable, TypeVar
 
-from mistralai.client import Mistral
+try:
+    from mistralai import Mistral  # mistralai v1.x: top-level export
+except ImportError:  # pragma: no cover - mistralai v2.x layout
+    from mistralai.client import Mistral
 
 from ..config import Settings, get_settings
 

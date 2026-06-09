@@ -1,0 +1,40 @@
+{
+  "label": "baseline",
+  "timestamp": "20260609_182601",
+  "judge_model": "mistral-small-latest",
+  "n_questions": 2,
+  "overall": {
+    "faithfulness": 0.925,
+    "answer_relevancy": NaN,
+    "llm_context_precision_with_reference": 0.5,
+    "context_recall": 0.5
+  },
+  "by_category": {
+    "simple_texte": {
+      "faithfulness": 0.925,
+      "answer_relevancy": NaN,
+      "llm_context_precision_with_reference": 0.5,
+      "context_recall": 0.5
+    }
+  },
+  "per_question": [
+    {
+      "id": "txt_impressive_duo",
+      "category": "simple_texte",
+      "expected": "rag",
+      "faithfulness": 0.85,
+      "answer_relevancy": NaN,
+      "llm_context_precision_with_reference": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "txt_reggie_miller",
+      "category": "simple_texte",
+      "expected": "rag",
+      "faithfulness": 1.0,
+      "answer_relevancy": NaN,
+      "llm_context_precision_with_reference": 1.0,
+      "context_recall": 1.0
+    }
+  ]
+}

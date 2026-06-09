@@ -1,0 +1,124 @@
+# Evaluation questions for the RAGAS harness (baseline & enriched runs).
+#
+# category : simple_texte | simple_chiffre | complexe_chiffre | bruite | hors_couverture
+# expected : rag (texte/PDF) | sql (Excel/chiffré) | none (donnée absente de la base)
+# reference: ground truth used by RAGAS (context_recall / factual correctness).
+#
+# Numeric references verified against data/regular+NBA.xlsx (sheet "Données NBA",
+# 2024-25 season, 569 players). Text references derived from the OCR'd Reddit
+# match threads (data/*.pdf).
+
+questions:
+  # --- simple_texte : answerable from the PDF (Reddit) commentaries ---
+  - id: txt_impressive_duo  # Match 1 thread
+    category: simple_texte
+    expected: rag
+    question: "Quel duo de l'Orlando Magic les fans encensent-ils ?"
+    reference: >-
+      Paolo Banchero et Franz Wagner, le duo d'ailiers du Orlando Magic, décrits comme
+      très prometteurs (« absolute dogs ») malgré un effectif qui manque de tireurs.
+
+  - id: txt_reggie_miller  # Match 3 thread
+    category: simple_texte
+    expected: rag
+    question: "Quel joueur est présenté comme la première option offensive la plus efficace de l'histoire des playoffs NBA ?"
+    reference: "Reggie Miller, présenté comme la première option (« first option ») la plus efficace de l'histoire des playoffs."
+
+  - id: txt_nba_marketing  # Match 2 thread
+    category: simple_texte
+    expected: rag
+    question: "Quel reproche les fans adressent-ils à la NBA concernant la promotion des playoffs ?"
+    reference: >-
+      Les fans reprochent à la NBA un mauvais marketing / une mauvaise communication :
+      l'affiche réunissant les deux meilleures équipes selon les stats avancées est
+      perçue et vendue comme inintéressante (« snoozefest »).
+
+  - id: txt_homecourt_analogy  # Match 4 thread
+    category: simple_texte
+    expected: rag
+    question: "Quelle équipe de NHL a joué à l'extérieur avant d'atteindre la finale, selon un fan ?"
+    reference: >-
+      Les Oilers d'Edmonton en NHL, qui ont atteint la finale en jouant les trois tours
+      précédents à l'extérieur (sans avantage du terrain) avant de recevoir en finale.
+
+  # --- simple_chiffre : single-stat lookups (Excel/SQL) ---
+  - id: num_count_over_2000
+    category: simple_chiffre
+    expected: sql
+    question: "Combien de joueurs ont marqué plus de 2000 points lors de la saison régulière ?"
+    reference: "4 joueurs ont dépassé 2000 points."
+
+  - id: num_best_3pct
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a le meilleur pourcentage à 3 points (minimum 200 tentatives) ?"
+    reference: "Zach LaVine (SAC), avec 44,6 % à 3 points sur 533 tentatives."
+
+  - id: num_top_assists
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a distribué le plus de passes décisives ?"
+    reference: "Trae Young (ATL), avec 882 passes décisives."
+
+  - id: num_top_rebounds
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a capté le plus de rebonds ?"
+    reference: "Ivica Zubac (LAC), avec 1008 rebonds."
+
+  # --- complexe_chiffre : aggregations / comparisons (Excel/SQL) ---
+  - id: num_best_plusminus
+    category: complexe_chiffre
+    expected: sql
+    question: "Quel joueur affiche le meilleur différentiel (+/-) moyen ?"
+    reference: "Shai Gilgeous-Alexander (OKC), avec un +/- de +12,1."
+
+  - id: num_compare_okc_min
+    category: complexe_chiffre
+    expected: sql
+    question: "Compare le meilleur marqueur d'OKC et celui de Minnesota."
+    reference: >-
+      Le meilleur marqueur d'OKC est Shai Gilgeous-Alexander (2485 pts) ; celui de
+      Minnesota est Anthony Edwards (2180 pts). SGA marque davantage sur la saison.
+
+  - id: num_team_total_rebounds
+    category: complexe_chiffre
+    expected: sql
+    question: "Quel est le nombre total de rebonds captés par l'ensemble des joueurs d'Oklahoma City (OKC) cette saison ?"
+    reference: "3660 rebonds au total (somme des rebonds des 18 joueurs d'OKC)."
+
+  - id: num_top10_points_sum
+    category: complexe_chiffre
+    expected: sql
+    question: "Quelle est la somme des points marqués par les 10 meilleurs marqueurs de la ligue ?"
+    reference: "19931 points (somme des points des 10 meilleurs marqueurs de la saison)."
+
+  # --- bruite : typos / phrasing noise (same intent as numeric questions) ---
+  - id: noisy_3pct
+    category: bruite
+    expected: sql
+    question: "kel joueur a le meilleur pourcentage a 3pts??"
+    reference: "Zach LaVine (SAC), avec 44,6 % à 3 points sur 533 tentatives."
+
+  - id: noisy_count
+    category: bruite
+    expected: sql
+    question: "kombien de joueur on marké plus de 1.5k pts cet saison??"
+    reference: "23 joueurs ont dépassé 1500 points."
+
+  # --- hors_couverture : data not present in the source (honest limits) ---
+  - id: oob_last5
+    category: hors_couverture
+    expected: none
+    question: "Quel joueur a le meilleur pourcentage à 3 points sur les 5 derniers matchs ?"
+    reference: >-
+      Donnée non disponible : la base est agrégée sur l'ensemble de la saison, sans
+      détail match par match.
+
+  - id: oob_home_away
+    category: hors_couverture
+    expected: none
+    question: "Compare les statistiques de rebonds de l'équipe à domicile et à l'extérieur."
+    reference: >-
+      Donnée non disponible : la base ne distingue pas les performances à domicile
+      et à l'extérieur.

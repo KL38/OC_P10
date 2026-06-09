@@ -1,0 +1,193 @@
+{
+  "label": "baseline",
+  "timestamp": "20260609_212658",
+  "judge_model": "mistral-small-2506",
+  "n_questions": 16,
+  "aggregate_excludes": [
+    "hors_couverture"
+  ],
+  "overall": {
+    "faithfulness": 0.387,
+    "answer_relevancy": 0.821,
+    "context_precision": 0.137,
+    "context_recall": 0.286
+  },
+  "by_category": {
+    "bruite": {
+      "faithfulness": 0.243,
+      "answer_relevancy": 0.859,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    "complexe_chiffre": {
+      "faithfulness": 0.322,
+      "answer_relevancy": 0.665,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    "hors_couverture": {
+      "faithfulness": 0.091,
+      "answer_relevancy": 0.45,
+      "context_precision": 0.5,
+      "context_recall": 0.0
+    },
+    "simple_chiffre": {
+      "faithfulness": 0.283,
+      "answer_relevancy": 0.899,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    "simple_texte": {
+      "faithfulness": 0.628,
+      "answer_relevancy": 0.882,
+      "context_precision": 0.479,
+      "context_recall": 1.0
+    }
+  },
+  "per_question": [
+    {
+      "id": "txt_impressive_duo",
+      "category": "simple_texte",
+      "expected": "rag",
+      "faithfulness": 0.8,
+      "answer_relevancy": 0.9049894058406897,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "txt_reggie_miller",
+      "category": "simple_texte",
+      "expected": "rag",
+      "faithfulness": 0.46153846153846156,
+      "answer_relevancy": 0.8474503478683867,
+      "context_precision": 0.99999999998,
+      "context_recall": 1.0
+    },
+    {
+      "id": "txt_nba_marketing",
+      "category": "simple_texte",
+      "expected": "rag",
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.928354713574059,
+      "context_precision": 0.9166666666361111,
+      "context_recall": 1.0
+    },
+    {
+      "id": "txt_homecourt_analogy",
+      "category": "simple_texte",
+      "expected": "rag",
+      "faithfulness": 0.25,
+      "answer_relevancy": 0.846689943090637,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "num_count_over_2000",
+      "category": "simple_chiffre",
+      "expected": "sql",
+      "faithfulness": 0.3333333333333333,
+      "answer_relevancy": 0.9415300423177647,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "num_best_3pct",
+      "category": "simple_chiffre",
+      "expected": "sql",
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.9028070234414408,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "num_top_assists",
+      "category": "simple_chiffre",
+      "expected": "sql",
+      "faithfulness": 0.13333333333333333,
+      "answer_relevancy": 0.8413367212713405,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "num_top_rebounds",
+      "category": "simple_chiffre",
+      "expected": "sql",
+      "faithfulness": 0.6666666666666666,
+      "answer_relevancy": 0.9098208620795315,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "num_best_plusminus",
+      "category": "complexe_chiffre",
+      "expected": "sql",
+      "faithfulness": 0.25,
+      "answer_relevancy": 0.9013468123602966,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "num_compare_okc_min",
+      "category": "complexe_chiffre",
+      "expected": "sql",
+      "faithfulness": 0.3157894736842105,
+      "answer_relevancy": 0.7911222310081937,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "num_team_total_rebounds",
+      "category": "complexe_chiffre",
+      "expected": "sql",
+      "faithfulness": 0.0967741935483871,
+      "answer_relevancy": 0.9680318236340688,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "num_top10_points_sum",
+      "category": "complexe_chiffre",
+      "expected": "sql",
+      "faithfulness": 0.625,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "noisy_3pct",
+      "category": "bruite",
+      "expected": "sql",
+      "faithfulness": 0.08695652173913043,
+      "answer_relevancy": 0.8656178299874767,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "noisy_count",
+      "category": "bruite",
+      "expected": "sql",
+      "faithfulness": 0.4,
+      "answer_relevancy": 0.851529984719721,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "oob_last5",
+      "category": "hors_couverture",
+      "expected": "none",
+      "faithfulness": 0.18181818181818182,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.9999999999,
+      "context_recall": 0.0
+    },
+    {
+      "id": "oob_home_away",
+      "category": "hors_couverture",
+      "expected": "none",
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.8992307787364217,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    }
+  ]
+}
