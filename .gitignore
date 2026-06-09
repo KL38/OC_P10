@@ -20,6 +20,12 @@ wheels/
 # FAISS vector store (build artifact, regenerable via scripts/build_index.py)
 /vector_db/
 
+# Local SQLite fallback DB (regenerable via scripts/load_excel_to_db.py)
+/db/
+
 # Environment variables (API keys etc.)
 .env
+
+Livrables 
+/livrables/
 

@@ -54,10 +54,18 @@ class Settings(BaseSettings):
     # --- Retrieval ---
     search_k: int = 5  # default number of chunks retrieved
 
+    # --- SQL / database (Phase 3) ---
+    # Mistral's OpenAI-compatible endpoint, used by the Pydantic AI agent
+    # (pydantic-ai-slim without the `mistral` extra, which would force mistralai>=2).
+    mistral_openai_base_url: str = "https://api.mistral.ai/v1"
+    sql_sample_rows_in_table_info: int = 3  # sample rows shown to the SQL LLM
+    sql_default_limit: int = 20  # LIMIT hint for generated non-aggregate queries
+
     # --- Paths (anchored to the project root) ---
     project_root: Path = PROJECT_ROOT
     data_dir: Path = PROJECT_ROOT / "data"
     vector_db_dir: Path = PROJECT_ROOT / "vector_db"
+    sqlite_db_file: Path = PROJECT_ROOT / "db" / "nba.sqlite"  # local fallback DB
 
     @property
     def faiss_index_file(self) -> Path:
@@ -68,6 +76,27 @@ class Settings(BaseSettings):
     def document_chunks_file(self) -> Path:
         """Path to the persisted chunks (jsonl, not pickle — portable & safe)."""
         return self.vector_db_dir / "document_chunks.jsonl"
+
+    @property
+    def excel_file(self) -> Path:
+        """Path to the NBA stats Excel workbook (source of the SQL database)."""
+        return self.data_dir / "regular+NBA.xlsx"
+
+    @property
+    def sqlalchemy_url(self) -> str:
+        """SQLAlchemy connection URL: Supabase/PostgreSQL if ``DATABASE_URL`` is
+        set, otherwise a local SQLite file (offline fallback, used by tests).
+
+        Supabase hands out ``postgresql://`` URLs; SQLAlchemy needs the driver
+        spelled out to pick psycopg v3 instead of the absent psycopg2.
+        """
+        if self.database_url:
+            url = self.database_url
+            for prefix in ("postgresql://", "postgres://"):
+                if url.startswith(prefix):
+                    return "postgresql+psycopg://" + url[len(prefix):]
+            return url
+        return f"sqlite:///{self.sqlite_db_file.as_posix()}"
 
 
 @lru_cache

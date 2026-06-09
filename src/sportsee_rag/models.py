@@ -47,6 +47,20 @@ class AskRequest(BaseModel):
     k: int | None = Field(default=None, ge=1)  # None -> use settings.search_k
 
 
+class SqlResult(BaseModel):
+    """Outcome of one NL→SQL round-trip (generated query + execution result).
+
+    ``error`` is set instead of raising so the agent can degrade gracefully
+    (tell the user the lookup failed) rather than abort the whole run.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    query: str
+    result: str = ""
+    error: str | None = None
+
+
 class RagAnswer(BaseModel):
     """A typed answer produced by the RAG pipeline (and later the agent).
 
@@ -60,4 +74,6 @@ class RagAnswer(BaseModel):
     answer: str
     contexts: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
-    used_tool: Literal["rag", "sql"] = "rag"
+    # "both"/"none" only occur on the agent path: the agent may combine tools
+    # or answer without calling any (flagged, as that means zero evidence).
+    used_tool: Literal["rag", "sql", "both", "none"] = "rag"
