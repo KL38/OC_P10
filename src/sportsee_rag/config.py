@@ -57,7 +57,6 @@ class Settings(BaseSettings):
     # --- Paths (anchored to the project root) ---
     project_root: Path = PROJECT_ROOT
     data_dir: Path = PROJECT_ROOT / "data"
-    pdf_dir: Path = PROJECT_ROOT / "data" / "pdf"
     vector_db_dir: Path = PROJECT_ROOT / "vector_db"
 
     @property
