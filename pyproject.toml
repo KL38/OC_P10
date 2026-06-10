@@ -13,7 +13,7 @@ dependencies = [
     "langchain-mistralai>=0.2.0,<0.3",
     "langchain-text-splitters>=0.3.0,<0.4",
     "litellm>=1.88.1",
-    "logfire>=4.35.0",
+    "logfire[sqlalchemy]>=4.35.0",
     "mistralai>=1.5.1,<2",
     "numpy>=2.4.6",
     "openpyxl>=3.1.5",
@@ -43,6 +43,11 @@ torchvision = { index = "pytorch-cu128" }
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.logfire]
+# Tests exercise spans (SqlTool.run) without going through the entrypoints
+# that call setup_observability(); silence the "not configured" warning.
+ignore_no_config = true
 
 [dependency-groups]
 dev = [

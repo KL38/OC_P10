@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 
+from openai.types import chat
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models import Model
 from pydantic_ai.models.openai import OpenAIChatModel
@@ -60,6 +61,32 @@ Règles de réponse :
 _NO_CONTEXT = "Aucune information pertinente trouvée dans la base de données pour cette question."
 
 
+class MistralCompatChatModel(OpenAIChatModel):
+    """``OpenAIChatModel`` adapted to Mistral's OpenAI-compatible endpoint.
+
+    Mistral occasionally returns ``message.content`` as a list of chunks
+    (``[{'type': 'text', 'text': ...}]``) where the OpenAI spec mandates a
+    plain string; pydantic-ai's strict response validation then rejects the
+    whole completion (``UnexpectedModelBehavior``). ``_validate_completion``
+    is the hook documented for custom completion validation: we flatten the
+    text chunks into a string, then delegate to the standard validation.
+
+    Version-sensitive: relies on a pydantic-ai internal hook (present in
+    1.106.0, still on main as of 2026-06) — re-check on upgrade.
+    """
+
+    def _validate_completion(self, response: chat.ChatCompletion):
+        for choice in response.choices:
+            content = choice.message.content
+            if isinstance(content, list):
+                choice.message.content = "".join(
+                    part.get("text", "")
+                    for part in content
+                    if isinstance(part, dict) and part.get("type") == "text"
+                )
+        return super()._validate_completion(response)
+
+
 @dataclass
 class AgentTrace:
     """Mutable per-run accumulator filled by the tools.
@@ -88,7 +115,7 @@ def build_agent(model: Model | None = None, settings: Settings | None = None) ->
     """Build the routing agent. ``model`` is injectable for offline tests."""
     settings = settings or get_settings()
     if model is None:
-        model = OpenAIChatModel(
+        model = MistralCompatChatModel(
             settings.chat_model,
             provider=OpenAIProvider(
                 base_url=settings.mistral_openai_base_url,

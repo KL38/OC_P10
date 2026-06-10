@@ -9,9 +9,12 @@ any network call. The actual routing *quality* is judged by RAGAS in Phase 4.
 from __future__ import annotations
 
 import pytest
+from openai.types.chat import ChatCompletion, ChatCompletionMessage
+from openai.types.chat.chat_completion import Choice
 from pydantic_ai.models.test import TestModel
+from pydantic_ai.providers.openai import OpenAIProvider
 
-from sportsee_rag.agent.agent import build_agent, ask_agent
+from sportsee_rag.agent.agent import MistralCompatChatModel, build_agent, ask_agent
 from sportsee_rag.models import AskRequest, RetrievedChunk, SqlResult
 
 
@@ -99,3 +102,49 @@ def test_no_tool_reports_none(settings, fake_manager, fake_sql_tool):
     assert answer.used_tool == "none"
     assert answer.contexts == []
     assert answer.answer
+
+
+class TestMistralCompatChatModel:
+    """Mistral's OpenAI-compat endpoint may return ``content`` as a chunk list
+    instead of the spec-mandated string; the adapter must flatten it so the
+    strict pydantic-ai validation accepts the completion."""
+
+    @staticmethod
+    def _completion(content) -> ChatCompletion:
+        # model_construct bypasses the SDK validation, mirroring how the
+        # openai client materialises whatever JSON the server actually sent.
+        message = ChatCompletionMessage.model_construct(role="assistant", content=content)
+        choice = Choice.model_construct(index=0, message=message, finish_reason="stop")
+        return ChatCompletion.model_construct(
+            id="cmpl-test",
+            choices=[choice],
+            created=1,
+            model="mistral-small-latest",
+            object="chat.completion",
+        )
+
+    @staticmethod
+    def _model() -> MistralCompatChatModel:
+        return MistralCompatChatModel(
+            "mistral-small-latest",
+            provider=OpenAIProvider(base_url="http://localhost:1/v1", api_key="test-key"),
+        )
+
+    def test_chunk_list_content_is_flattened(self):
+        completion = self._completion(
+            [{"type": "text", "text": "Les fans reprochent "}, {"type": "text", "text": "le marketing."}]
+        )
+        validated = self._model()._validate_completion(completion)
+        assert validated.choices[0].message.content == "Les fans reprochent le marketing."
+
+    def test_non_text_chunks_are_dropped(self):
+        completion = self._completion(
+            [{"type": "text", "text": "Réponse."}, {"type": "reference", "ids": [1]}]
+        )
+        validated = self._model()._validate_completion(completion)
+        assert validated.choices[0].message.content == "Réponse."
+
+    def test_plain_string_content_is_untouched(self):
+        completion = self._completion("Réponse classique.")
+        validated = self._model()._validate_completion(completion)
+        assert validated.choices[0].message.content == "Réponse classique."

@@ -35,7 +35,8 @@ class Settings(BaseSettings):
 
     # --- Secrets / external services ---
     mistral_api_key: str  # required: fails fast if absent
-    database_url: str | None = None  # Phase 3 (Supabase / PostgreSQL)
+    database_url: str | None = None  # admin/write role — load_excel_to_db ONLY
+    database_url_readonly: str | None = None  # SELECT-only role — app runtime (SqlTool)
     logfire_token: str | None = None  # optional: local mode if absent
 
     # --- Mistral models (confirm exact ids against the Mistral docs) ---
@@ -82,21 +83,35 @@ class Settings(BaseSettings):
         """Path to the NBA stats Excel workbook (source of the SQL database)."""
         return self.data_dir / "regular+NBA.xlsx"
 
+    @staticmethod
+    def _as_sqlalchemy(url: str) -> str:
+        """Spell out the psycopg v3 driver in Supabase's ``postgres://`` URLs
+        (SQLAlchemy would otherwise look for the absent psycopg2)."""
+        for prefix in ("postgresql://", "postgres://"):
+            if url.startswith(prefix):
+                return "postgresql+psycopg://" + url[len(prefix):]
+        return url
+
     @property
     def sqlalchemy_url(self) -> str:
-        """SQLAlchemy connection URL: Supabase/PostgreSQL if ``DATABASE_URL`` is
-        set, otherwise a local SQLite file (offline fallback, used by tests).
-
-        Supabase hands out ``postgresql://`` URLs; SQLAlchemy needs the driver
-        spelled out to pick psycopg v3 instead of the absent psycopg2.
+        """Admin connection URL (loader): Supabase/PostgreSQL if ``DATABASE_URL``
+        is set, otherwise a local SQLite file (offline fallback, used by tests).
         """
         if self.database_url:
-            url = self.database_url
-            for prefix in ("postgresql://", "postgres://"):
-                if url.startswith(prefix):
-                    return "postgresql+psycopg://" + url[len(prefix):]
-            return url
+            return self._as_sqlalchemy(self.database_url)
         return f"sqlite:///{self.sqlite_db_file.as_posix()}"
+
+    @property
+    def sqlalchemy_url_readonly(self) -> str:
+        """Runtime connection URL (SqlTool): the SELECT-only role if configured.
+
+        Falls back to the admin URL / SQLite when ``DATABASE_URL_READONLY`` is
+        unset (local dev, tests) — defence in depth is then reduced to the
+        application-level guard in ``sql_tool.ensure_read_only``.
+        """
+        if self.database_url_readonly:
+            return self._as_sqlalchemy(self.database_url_readonly)
+        return self.sqlalchemy_url
 
 
 @lru_cache

@@ -19,7 +19,9 @@ from __future__ import annotations
 import logging
 import re
 
+import logfire
 from langchain_community.utilities import SQLDatabase
+from sqlalchemy import create_engine
 
 from ..config import Settings, get_settings
 from ..llm.client import MistralError, MistralLLM
@@ -138,10 +140,18 @@ class SqlTool:
     ) -> None:
         self._settings = settings or get_settings()
         self._llm = llm or MistralLLM(self._settings)
-        self._db = db or SQLDatabase.from_uri(
-            self._settings.sqlalchemy_url,
-            sample_rows_in_table_info=self._settings.sql_sample_rows_in_table_info,
-        )
+        if db is None:
+            # Engine built explicitly (instead of SQLDatabase.from_uri) so it
+            # can be instrumented: one Logfire span per executed query.
+            # Connects with the SELECT-only role (real read-only enforcement;
+            # ensure_read_only is only the first, string-level layer).
+            engine = create_engine(self._settings.sqlalchemy_url_readonly)
+            logfire.instrument_sqlalchemy(engine=engine)
+            db = SQLDatabase(
+                engine,
+                sample_rows_in_table_info=self._settings.sql_sample_rows_in_table_info,
+            )
+        self._db = db
 
     def generate_query(self, question: str) -> str:
         """Ask the LLM for a SQL query answering ``question`` (not executed)."""
@@ -158,23 +168,32 @@ class SqlTool:
         """Full round-trip: generate, guard, execute.
 
         Failures land in ``SqlResult.error`` (not raised) so the agent can
-        report them gracefully instead of aborting the whole run.
+        report them gracefully instead of aborting the whole run. The whole
+        round-trip is wrapped in a span: the SQL-generation LLM call goes
+        through our own ``MistralLLM`` wrapper, invisible to the Pydantic AI
+        instrumentation — without this span it would be a black box in the
+        trace. Errors are recorded as attributes (returned, never raised).
         """
-        try:
-            query = self.generate_query(question)
-        except MistralError as exc:
-            logger.error("SQL generation failed: %s", exc)
-            return SqlResult(query="", error=f"SQL generation failed: {exc}")
+        with logfire.span("SQL tool run", question=question) as span:
+            try:
+                query = self.generate_query(question)
+            except MistralError as exc:
+                logger.error("SQL generation failed: %s", exc)
+                span.set_attribute("error", str(exc))
+                return SqlResult(query="", error=f"SQL generation failed: {exc}")
+            span.set_attribute("generated_sql", query)
 
-        try:
-            ensure_read_only(query)
-            result = self._db.run(query)
-        except SqlToolError as exc:
-            logger.warning("Generated query rejected: %s", exc)
-            return SqlResult(query=query, error=str(exc))
-        except Exception as exc:  # noqa: BLE001 - driver error types vary by backend
-            logger.warning("SQL execution failed: %s", exc)
-            return SqlResult(query=query, error=f"SQL execution failed: {exc}")
+            try:
+                ensure_read_only(query)
+                result = self._db.run(query)
+            except SqlToolError as exc:
+                logger.warning("Generated query rejected: %s", exc)
+                span.set_attribute("error", str(exc))
+                return SqlResult(query=query, error=str(exc))
+            except Exception as exc:  # noqa: BLE001 - driver error types vary by backend
+                logger.warning("SQL execution failed: %s", exc)
+                span.set_attribute("error", str(exc))
+                return SqlResult(query=query, error=f"SQL execution failed: {exc}")
 
-        logger.info("SQL tool ran query: %s", query)
-        return SqlResult(query=query, result=str(result))
+            logger.info("SQL tool ran query: %s", query)
+            return SqlResult(query=query, result=str(result))
