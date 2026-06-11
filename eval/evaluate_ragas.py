@@ -23,8 +23,13 @@ Judge limitation (documented): the judge is ``mistral-small`` (free tier), not a
 frontier model — scores are indicative; the *delta* baseline->enriched is the signal.
 
 Usage:
-  uv run python eval/evaluate_ragas.py --label baseline --limit 2   # cheap smoke
-  uv run python eval/evaluate_ragas.py --label baseline             # full run
+  uv run python eval/evaluate_ragas.py --system baseline --limit 2   # cheap smoke
+  uv run python eval/evaluate_ragas.py --system enriched --limit 2   # smoke the agent path
+  uv run python eval/evaluate_ragas.py --system enriched             # full enriched run
+
+``--system`` selects WHAT is evaluated (baseline RAG pipeline vs SQL-enriched
+agent); everything else — questions, judge, metrics, scoring loop — is shared,
+so the before/after comparison is literally "same harness, different flag".
 """
 
 from __future__ import annotations
@@ -46,11 +51,13 @@ import pandas as pd
 import yaml
 from mistralai import Mistral
 
+from sportsee_rag.agent.agent import ask_agent, build_agent
 from sportsee_rag.config import Settings, get_settings
 from sportsee_rag.models import AskRequest
 from sportsee_rag.observability import setup_observability
 from sportsee_rag.rag.pipeline import answer_question
 from sportsee_rag.retrieval.vector_store import VectorStoreManager
+from sportsee_rag.sql.sql_tool import SqlTool
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", DeprecationWarning)
@@ -83,17 +90,37 @@ def load_questions(limit: int | None = None) -> list[dict]:
 
 
 def generate_predictions(
-    questions: list[dict], *, manager: VectorStoreManager, settings: Settings, throttle: float
+    questions: list[dict], *, system: str, manager: VectorStoreManager,
+    settings: Settings, throttle: float
 ) -> list[dict]:
-    """Run each question through our RAG pipeline and build RAGAS samples."""
+    """Run each question through the system under test and build RAGAS samples.
+
+    ``system`` dispatches between the two systems being compared:
+      - ``baseline`` : text-only RAG pipeline (``answer_question``) — frozen;
+      - ``enriched`` : Pydantic AI agent (``ask_agent``, routing RAG vs SQL).
+    Both return the same ``RagAnswer`` contract, so the sample format is
+    identical; ``used_tool`` records the agent's routing decision (None for
+    the baseline) — routing is non-deterministic, so the report keeps it.
+    """
     samples: list[dict] = []
+    if system == "enriched":
+        # Built once and reused: the SqlTool reflects the schema at startup
+        # and the agent is stateless across runs (no message history).
+        sql_tool = SqlTool(settings=settings)
+        agent = build_agent(settings=settings)
     for i, q in enumerate(questions, start=1):
         logger.info("Generate %d/%d [%s] %s", i, len(questions), q["id"], q["question"])
-        answer = answer_question(AskRequest(question=q["question"]), manager=manager, settings=settings)
+        request = AskRequest(question=q["question"])
+        if system == "enriched":
+            answer = ask_agent(request, agent=agent, manager=manager,
+                               sql_tool=sql_tool, settings=settings)
+        else:
+            answer = answer_question(request, manager=manager, settings=settings)
         samples.append({
             "id": q["id"],
             "category": q["category"],
             "expected": q.get("expected"),
+            "used_tool": answer.used_tool if system == "enriched" else None,
             "user_input": q["question"],
             "response": answer.answer,
             "retrieved_contexts": answer.contexts or ["(aucun contexte récupéré)"],
@@ -205,7 +232,14 @@ def build_markdown(label: str, stamp: str, judge_model: str, df: pd.DataFrame, b
     md = f"# Rapport RAGAS — {label}\n\n"
     md += f"- Date : {stamp}\n- Juge : `{judge_model}`\n- Questions : {len(df)}\n"
     md += f"- NaN par métrique (échecs du juge, ignorés dans les moyennes) : "
-    md += ", ".join(f"{m}={n_nan[m]}" for m in METRIC_NAMES) + "\n\n"
+    md += ", ".join(f"{m}={n_nan[m]}" for m in METRIC_NAMES) + "\n"
+
+    # Enriched runs: routing decisions (non-deterministic — kept for analysis).
+    has_tool = "used_tool" in df.columns and df["used_tool"].notna().any()
+    if has_tool:
+        counts = df["used_tool"].value_counts().to_dict()
+        md += "- Routing agent : " + ", ".join(f"{t}={n}" for t, n in counts.items()) + "\n"
+    md += "\n"
 
     md += "## Scores globaux (hors `hors_couverture`)\n\n"
     md += _md_table(["métrique", "score moyen"], [[m, _fmt(overall[m])] for m in METRIC_NAMES])
@@ -223,19 +257,23 @@ def build_markdown(label: str, stamp: str, judge_model: str, df: pd.DataFrame, b
 
     md += "\n## Détail par question\n\n"
     md += _md_table(
-        ["id", "catégorie", "attendu"] + METRIC_NAMES,
-        [[r["id"], r["category"], r["expected"]] + [_fmt(r[m]) for m in METRIC_NAMES]
+        ["id", "catégorie", "attendu"] + (["outil"] if has_tool else []) + METRIC_NAMES,
+        [[r["id"], r["category"], r["expected"]]
+         + ([r["used_tool"] or "—"] if has_tool else [])
+         + [_fmt(r[m]) for m in METRIC_NAMES]
          for r in df.to_dict(orient="records")],
     )
     return md
 
 
-def write_reports(samples: list[dict], score_rows: list[dict], *, label: str, judge_model: str) -> Path:
+def write_reports(samples: list[dict], score_rows: list[dict], *, system: str, label: str, judge_model: str) -> Path:
     """Write JSON + markdown reports and the raw predictions. Returns the md path."""
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    meta = pd.DataFrame([{k: s[k] for k in ("id", "category", "expected")} for s in samples])
+    meta = pd.DataFrame(
+        [{k: s.get(k) for k in ("id", "category", "expected", "used_tool")} for s in samples]
+    )
     df = pd.concat([meta, pd.DataFrame(score_rows)], axis=1)
 
     in_scope = df[~df["category"].isin(AGGREGATE_EXCLUDE)]
@@ -243,6 +281,7 @@ def write_reports(samples: list[dict], score_rows: list[dict], *, label: str, ju
     by_cat = df.groupby("category")[METRIC_NAMES].mean().round(3)
 
     report = {
+        "system": system,
         "label": label,
         "timestamp": stamp,
         "judge_model": judge_model,
@@ -266,7 +305,11 @@ def write_reports(samples: list[dict], score_rows: list[dict], *, label: str, ju
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the RAGAS evaluation harness (modern stack).")
-    parser.add_argument("--label", default="baseline", help="Run label (baseline / enriched).")
+    parser.add_argument("--system", choices=["baseline", "enriched"], default="baseline",
+                        help="System under test: frozen text-only RAG pipeline, or the "
+                             "SQL-enriched Pydantic AI agent. Same harness either way.")
+    parser.add_argument("--label", default=None,
+                        help="Report filename label (defaults to --system).")
     parser.add_argument("--limit", type=int, default=None, help="Evaluate only the first N questions.")
     parser.add_argument("--judge-model", default="mistral-small-2506",
                         help="Judge model. small-2506 = best free-tier limits (RPS 5, TPM 2.25M); "
@@ -278,24 +321,27 @@ def main() -> None:
 
     setup_observability()
     settings = get_settings()
+    label = args.label or args.system
 
     questions = load_questions(args.limit)
-    logger.info("Loaded %d questions (label=%s, judge=%s, strictness=%d)",
-                len(questions), args.label, args.judge_model, args.strictness)
+    logger.info("Loaded %d questions (system=%s, label=%s, judge=%s, strictness=%d)",
+                len(questions), args.system, label, args.judge_model, args.strictness)
 
     manager = VectorStoreManager(settings=settings)
     if manager.index is None:
         raise SystemExit("Index introuvable — lance d'abord `uv run python scripts/build_index.py`.")
 
-    logger.info("--- Generation ---")
-    samples = generate_predictions(questions, manager=manager, settings=settings, throttle=args.throttle)
+    logger.info("--- Generation (%s) ---", args.system)
+    samples = generate_predictions(questions, system=args.system, manager=manager,
+                                   settings=settings, throttle=args.throttle)
 
     logger.info("--- Scoring (RAGAS modern stack) ---")
     judge_llm, judge_emb = build_judge(settings, args.judge_model)
     metrics_spec = build_metrics_spec(judge_llm, judge_emb, strictness=args.strictness)
     score_rows = asyncio.run(score_samples(samples, metrics_spec))
 
-    md_path = write_reports(samples, score_rows, label=args.label, judge_model=args.judge_model)
+    md_path = write_reports(samples, score_rows, system=args.system, label=label,
+                            judge_model=args.judge_model)
     logger.info("--- Done --- report: %s", md_path)
     df = pd.DataFrame(score_rows)
     print(f"\nRapport : {md_path}")
