@@ -211,12 +211,15 @@ _EXTRACTORS = {
 }
 
 
-def load_and_parse_files(input_dir: str | Path) -> list[dict[str, Any]]:
+def load_and_parse_files(
+    input_dir: str | Path, exclude_suffixes: set[str] | None = None
+) -> list[dict[str, Any]]:
     """Recursively load & parse files under ``input_dir``.
 
     Returns a list of documents ``{"page_content": str, "metadata": {...}}``,
     the format expected by the splitter. An Excel with several sheets yields one
-    document per sheet.
+    document per sheet. ``exclude_suffixes`` (e.g. ``{".xlsx", ".xls"}``) skips
+    those extensions — used to build the PDF-only index without the flattened Excel.
     """
     documents: list[dict[str, Any]] = []
     input_path = Path(input_dir)
@@ -230,7 +233,11 @@ def load_and_parse_files(input_dir: str | Path) -> list[dict[str, Any]]:
             continue
         relative_path = file_path.relative_to(input_path)
         source_folder = relative_path.parts[0] if len(relative_path.parts) > 1 else "root"
-        extractor = _EXTRACTORS.get(file_path.suffix.lower())
+        suffix = file_path.suffix.lower()
+        if exclude_suffixes and suffix in exclude_suffixes:
+            logger.info("Excluded by filter (%s): %s", suffix, relative_path)
+            continue
+        extractor = _EXTRACTORS.get(suffix)
         if extractor is None:
             logger.warning("Unsupported file type ignored: %s", relative_path)
             continue

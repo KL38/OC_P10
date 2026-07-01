@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparatif RAGAS — baseline vs enrichi (v2) · SportSee P10</title>
+<style>
+  :root {
+    --bg:#f6f8fa; --card:#fff; --ink:#1f2430; --muted:#6a7280; --line:#e3e7ee;
+    --accent:#2563eb; --good:#157f3d; --good-bg:#e7f6ec; --bad:#b3261e; --bad-bg:#fdebea;
+    --warn:#92600a; --warn-bg:#fdf3df; --base-bar:#b8c2d4; --enr-bar:#2563eb;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI",system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--ink); line-height:1.55; }
+  .wrap { max-width:1080px; margin:0 auto; padding:32px 24px 64px; }
+  header.hero { background:linear-gradient(120deg,#1e293b,#1e3a8a 60%,#312e81); color:#fff; border-radius:14px; padding:30px 34px; margin-bottom:28px; }
+  header.hero h1 { margin:0 0 6px; font-size:1.6rem; }
+  header.hero p { margin:4px 0; color:#cbd5f5; font-size:.94rem; }
+  header.hero code { background:rgba(255,255,255,.12); padding:1px 7px; border-radius:5px; color:#e2e8ff; }
+  h2 { font-size:1.25rem; margin:38px 0 14px; padding-bottom:6px; border-bottom:2px solid var(--line); }
+  h2 .num { color:var(--accent); margin-right:8px; }
+  .note { background:var(--warn-bg); border-left:4px solid #d9a514; padding:10px 16px; border-radius:0 8px 8px 0; font-size:.92rem; margin:14px 0; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  .kpi .name { font-size:.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; }
+  .kpi .vals { display:flex; align-items:baseline; gap:10px; margin:6px 0 10px; }
+  .kpi .vals .b { color:var(--muted); font-size:1.05rem; text-decoration:line-through 1.5px rgba(106,114,128,.45); }
+  .kpi .vals .e { font-size:1.7rem; font-weight:700; }
+  .delta { font-weight:700; font-size:.92rem; padding:2px 9px; border-radius:999px; color:var(--good); background:var(--good-bg); }
+  .bars { margin-top:8px; }
+  .bar { display:flex; align-items:center; gap:8px; font-size:.75rem; color:var(--muted); margin-top:4px; }
+  .bar .track { flex:1; height:8px; background:#eef1f6; border-radius:5px; overflow:hidden; }
+  .bar .fill { height:100%; border-radius:5px; }
+  .bar.base .fill { background:var(--base-bar); } .bar.enr .fill { background:var(--enr-bar); }
+  .bar .lbl { width:62px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; font-size:.9rem; }
+  th { background:#eef2f8; text-align:left; padding:9px 12px; font-weight:600; }
+  td { padding:8px 12px; border-top:1px solid var(--line); vertical-align:top; }
+  tr:nth-child(even) td { background:#fafbfd; }
+  .arrow { color:var(--muted); padding:0 2px; }
+  .gain { color:var(--good); font-weight:700; } .loss { color:var(--bad); font-weight:700; } .flat { color:var(--muted); }
+  .vnote { color:var(--muted); font-style:italic; font-size:.85rem; }
+  .badge { display:inline-block; font-size:.78rem; font-weight:700; padding:2px 10px; border-radius:999px; white-space:nowrap; }
+  .ok { background:var(--good-bg); color:var(--good); } .ko { background:var(--bad-bg); color:var(--bad); } .meh { background:var(--warn-bg); color:var(--warn); }
+  /* deep question cards */
+  .qcard { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--line); border-radius:10px; padding:18px 22px; margin:18px 0; }
+  .qcard.ok { border-left-color:#2da55d; } .qcard.ko { border-left-color:#d6453c; } .qcard.meh { border-left-color:#e0a82e; }
+  .qcard h3 { margin:0 0 10px; font-size:1.05rem; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+  .qorig { background:#eef2f8; border-left:3px solid #94a3b8; padding:9px 13px; border-radius:0 7px 7px 0; font-style:italic; margin:10px 0; font-size:.93rem; }
+  .qorig b { font-style:normal; color:#475569; }
+  .answers { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+  .ans { border:1px solid var(--line); border-radius:8px; padding:11px 13px; font-size:.88rem; }
+  .ans .lab { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; display:inline-block; margin-bottom:6px; padding:1px 9px; border-radius:999px; }
+  .ans.base { background:#fbfbfc; } .ans.base .lab { background:#eceef2; color:#5b6472; }
+  .ans.v2 { background:#f4f9ff; } .ans.v2 .lab { background:#e0ecff; color:#1d4ed8; }
+  .scores { font-family:Consolas,monospace; font-size:.82rem; background:#f3f5f9; border-radius:7px; padding:6px 10px; display:inline-block; margin:6px 0 4px; }
+  .qcard p { margin:9px 0; font-size:.93rem; }
+  kbd.sql { font-family:Consolas,monospace; background:#f0f3f8; border:1px solid var(--line); border-radius:5px; padding:1px 6px; font-size:.82rem; }
+  .who { font-weight:700; } .who.gen { color:#9d3fd1; } .who.synth { color:#b3261e; } .who.judge { color:#15648f; } .who.route { color:#c2570e; }
+  .reco { background:#eef5ff; border-left:3px solid var(--accent); padding:7px 12px; border-radius:0 7px 7px 0; font-size:.9rem; margin:10px 0 2px; }
+  .reco b:first-child { color:var(--accent); }
+  .lesson { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:13px 18px; margin:10px 0; font-size:.93rem; }
+  .lesson b:first-child { color:var(--accent); }
+  footer { margin-top:44px; color:var(--muted); font-size:.82rem; border-top:1px solid var(--line); padding-top:14px; }
+  @media (max-width:720px){ .answers{ grid-template-columns:1fr; } }
+  @media print { body{ background:#fff } .wrap{ padding:0 } header.hero{ border-radius:0 } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Comparatif RAGAS — RAG baseline vs assistant enrichi</h1>
+  <p>Projet P10 SportSee · Assistant NBA · <b>60 questions</b> · 6 catégories × 10 · juge <code>mistral-small-2506</code> · 0 NaN</p>
+  <p><b>Avant</b> = prototype RAG texte seul (Excel aplati). <b>Après</b> = agent Pydantic AI : routing RAG / SQL, question posée <b>verbatim</b> au retriever, index texte <b>sans l'Excel aplati</b>, et garde-fou de <b>périmètre</b> (refus des questions hors-schéma).</p>
+  <p>Harness strictement identique (<code>evaluate_ragas.py</code>) — seul le système sous test change.</p>
+</header>
+
+<div class="note"><b>Intégrité méthodologique :</b> benchmark de 60 questions (~10 par catégorie), références <b>vérifiées deux fois</b> sur l'Excel
+et les threads Reddit, aucune question reconstruite à partir des échecs observés. Les correctifs de l'assistant sont des <b>principes
+généraux</b> (question verbatim, périmètre décrit par sa forme, anti-ré-étiquetage) — jamais des patches calqués sur les questions du
+benchmark. <code>hors_couverture</code> est exclu des moyennes (RAGAS n'évalue pas correctement les refus — cf. leçon 2) ;
+<code>mixte</code> y est inclus mais reste <i>généreux envers l'assistant</i> (le RAG seul ne peut pas répondre à la moitié chiffrée).</div>
+
+<h2><span class="num">1.</span>Scores globaux (hors <code>hors_couverture</code>)</h2>
+<div class="kpis">
+  <div class="kpi"><div class="name">Faithfulness</div>
+    <div class="vals"><span class="b">0.355</span><span class="e">0.878</span><span class="delta">+0.523</span></div>
+    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:36%"></div></div></div>
+    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:88%"></div></div></div></div></div>
+  <div class="kpi"><div class="name">Answer relevancy</div>
+    <div class="vals"><span class="b">0.759</span><span class="e">0.833</span><span class="delta">+0.074</span></div>
+    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:76%"></div></div></div>
+    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:83%"></div></div></div></div></div>
+  <div class="kpi"><div class="name">Context precision</div>
+    <div class="vals"><span class="b">0.166</span><span class="e">0.712</span><span class="delta">+0.546</span></div>
+    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:17%"></div></div></div>
+    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:71%"></div></div></div></div></div>
+  <div class="kpi"><div class="name">Context recall</div>
+    <div class="vals"><span class="b">0.260</span><span class="e">0.757</span><span class="delta">+0.497</span></div>
+    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:26%"></div></div></div>
+    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:76%"></div></div></div></div></div>
+</div>
+<p>Trois métriques sur quatre bondissent : le <b>faithfulness ×2,5</b> (les réponses citent les sorties d'outils au lieu de broder), la
+<b>précision</b> et le <b>recall</b> de contexte décollent de quasi-zéro. L'answer&nbsp;relevancy progresse modestement — tirée vers le
+bas par les <b>refus honnêtes</b> sur les questions hors-couverture, que le juge pénalise (leçon 2).</p>
+
+<h2><span class="num">2.</span>Scores par catégorie</h2>
+<table>
+  <tr><th>catégorie</th><th>faithfulness</th><th>answer_relevancy</th><th>context_precision</th><th>context_recall</th></tr>
+  <tr><td>simple_texte</td><td>0.570 <span class="arrow">→</span> <span class="gain">0.856</span></td><td>0.888 <span class="arrow">→</span> <span class="loss">0.798</span></td><td>0.428 <span class="arrow">→</span> <span class="loss">0.328</span></td><td>0.800 <span class="arrow">→</span> <span class="loss">0.700</span></td></tr>
+  <tr><td>simple_chiffre</td><td>0.334 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.615 <span class="arrow">→</span> <span class="gain">0.924</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.700</span></td></tr>
+  <tr><td>complexe_chiffre</td><td>0.369 <span class="arrow">→</span> <span class="gain">0.900</span></td><td>0.769 <span class="arrow">→</span> <span class="gain">0.833</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.733</span></td></tr>
+  <tr><td>bruite</td><td>0.268 <span class="arrow">→</span> <span class="gain">0.900</span></td><td>0.687 <span class="arrow">→</span> <span class="gain">0.812</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td></tr>
+  <tr><td>mixte</td><td>0.235 <span class="arrow">→</span> <span class="gain">0.733</span></td><td>0.837 <span class="arrow">→</span> <span class="flat">0.797</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.234</span></td><td>0.200 <span class="arrow">→</span> <span class="gain">0.650</span></td></tr>
+  <tr><td><i>hors_couverture (hors agrégat)</i></td><td>0.203 <span class="arrow">→</span> <span class="gain">0.500</span></td><td>0.738 <span class="arrow">→</span> <span class="loss">0.556</span></td><td>0.253 <span class="arrow">→</span> <span class="loss">0.200</span></td><td>0.200 <span class="arrow">→</span> <span class="loss">0.100</span></td></tr>
+</table>
+<p>Les catégories chiffrées et bruitées sont <b>transformées</b> (ctx_precision 0.1 → 1.0). Le <code>mixte</code> progresse fort
+(faithfulness 0.24 → 0.73) ; sa ctx_precision reste basse car RAGAS pénalise une référence <b>composée</b> texte+chiffre. Le léger recul
+d'answer_relevancy en <code>simple_texte</code> et <code>hors_couverture</code> reflète des <b>refus</b> et le corpus OCR bruité, pas une
+perte de qualité de réponse.</p>
+<p style="margin-bottom:4px"><b>Routing</b> (l'assistant décide seul de l'outil) :</p>
+<ul style="margin-top:0">
+  <li>chiffré + bruité : <b>30/30 → SQL</b></li>
+  <li>mixte : <b>9/10 → les deux outils</b></li>
+  <li>texte : <b>9/10 → RAG</b> (1 seule erreur de routing)</li>
+  <li>hors périmètre : <b>10/10 → SQL</b> — reste le point faible (§ 4)</li>
+</ul>
+
+<div class="note" style="background:#eef5ff;border-left-color:var(--accent)">
+<b>hors_couverture — a-t-il botté en touche ?</b> (10 questions hors périmètre)
+<table style="margin-top:8px">
+  <tr><th></th><th>baseline</th><th>enrichi</th></tr>
+  <tr><td>✅ <b>refus honnête</b></td><td>20 %</td><td><b class="gain">40 %</b></td></tr>
+  <tr><td>❌ confabulation — chiffre réel, mauvais cadre</td><td>60 %</td><td>60 %</td></tr>
+  <tr><td>❌ hallucination — donnée inventée de toutes pièces</td><td>20 %</td><td><b class="gain">0 %</b></td></tr>
+</table>
+</div>
+
+<h2><span class="num">3.</span>Détail par question (60)</h2>
+<table>
+  <tr><th>#</th><th>id</th><th>outil</th><th>F</th><th>AR</th><th>CP</th><th>CR</th><th>verdict</th></tr>
+  <tr><td>1</td><td>txt_impressive_duo</td><td>rag</td><td>0.70 → <span class="gain">1.00</span></td><td>0.93 → <span class="loss">0.84</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="vnote">juste, CP 0 (OCR)</span></td></tr>
+  <tr><td>2</td><td>txt_reggie_miller</td><td>rag</td><td>1.00 → <span class="flat">1.00</span></td><td>0.83 → <span class="flat">0.86</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
+  <tr><td>3</td><td>txt_nba_marketing</td><td>rag</td><td>1.00 → <span class="flat">1.00</span></td><td>0.96 → <span class="flat">0.91</span></td><td>0.92 → <span class="flat">0.92</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
+  <tr><td>4</td><td>txt_homecourt_analogy</td><td>rag</td><td>0.19 → <span class="gain">0.67</span></td><td>0.90 → <span class="flat">0.94</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>5</td><td>txt_randle_revelation</td><td>rag</td><td>0.12 → <span class="gain">1.00</span></td><td>0.92 → <span class="loss">0.72</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="vnote">juste, CR 0 (OCR)</span></td></tr>
+  <tr><td>6</td><td>txt_cade_pick</td><td>rag</td><td>0.53 → <span class="loss">0.00</span></td><td>0.98 → <span class="flat">0.97</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="vnote">juste, F 0 (OCR)</span></td></tr>
+  <tr><td>7</td><td>txt_popularity_contest</td><td>rag</td><td>0.87 → <span class="gain">1.00</span></td><td>0.83 → <span class="flat">0.86</span></td><td>0.87 → <span class="flat">0.87</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
+  <tr><td>8</td><td>txt_finalists_snoozefest</td><td>rag</td><td>0.40 → <span class="gain">0.89</span></td><td>0.91 → <span class="flat">0.95</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>9</td><td>txt_reggie_allstar*</td><td>sql</td><td>0.62 → <span class="gain">1.00</span></td><td>0.86 → <span class="loss">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="loss">mal routé SQL</span></td></tr>
+  <tr><td>10</td><td>txt_1995_rockets</td><td>rag</td><td>0.26 → <span class="gain">1.00</span></td><td>0.76 → <span class="gain">0.93</span></td><td>0.50 → <span class="flat">0.50</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>11</td><td>num_best_3pct</td><td>sql</td><td>0.06 → <span class="gain">1.00</span></td><td>0.81 → <span class="gain">0.97</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>12</td><td>num_best_ftpct</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.95 → <span class="flat">0.97</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>13</td><td>num_top_points</td><td>sql</td><td>0.64 → <span class="gain">1.00</span></td><td>0.94 → <span class="flat">0.95</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
+  <tr><td>14</td><td>num_top_rebounds</td><td>sql</td><td>0.56 → <span class="gain">1.00</span></td><td>0.85 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>15</td><td>num_top_assists</td><td>sql</td><td>0.46 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>16</td><td>num_top_steals</td><td>sql</td><td>0.50 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>17</td><td>num_top_blocks</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.92</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>18</td><td>num_top_td3</td><td>sql</td><td>0.50 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.94</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>19</td><td>num_second_scorer</td><td>sql</td><td>0.62 → <span class="gain">1.00</span></td><td>0.82 → <span class="loss">0.77</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>20</td><td>num_third_rebounds</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.94 → <span class="flat">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>21</td><td>num_count_over_2000</td><td>sql</td><td>0.33 → <span class="gain">1.00</span></td><td>0.97 → <span class="flat">0.98</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>22</td><td>num_count_ast_500</td><td>sql</td><td>0.38 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>23</td><td>num_best_plusminus</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.73 → <span class="gain">0.94</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>24</td><td>num_compare_okc_min</td><td>sql</td><td>0.25 → <span class="gain">1.00</span></td><td>0.76 → <span class="gain">0.81</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.67</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>25</td><td>num_compare_den_bos</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.78 → <span class="gain">0.92</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.67</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>26</td><td>num_team_total_rebounds</td><td>sql</td><td>0.59 → <span class="loss">0.00</span></td><td>0.89 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">bug nom équipe</span></td></tr>
+  <tr><td>27</td><td>num_team_top_pts</td><td>sql</td><td>1.00 → <span class="flat">1.00</span></td><td>0.97 → <span class="flat">0.96</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>28</td><td>num_team_top_reb</td><td>sql</td><td>0.25 → <span class="gain">1.00</span></td><td>0.87 → <span class="flat">0.85</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>29</td><td>num_top10_points_sum</td><td>sql</td><td>0.22 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.96</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>30</td><td>num_sga_ppg</td><td>sql</td><td>0.67 → <span class="gain">1.00</span></td><td>0.88 → <span class="gain">0.99</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="vnote">artefact (div. entière)</span></td></tr>
+  <tr><td>31</td><td>noisy_3pct</td><td>sql</td><td>0.29 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.88</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>32</td><td>noisy_count</td><td>sql</td><td>0.44 → <span class="gain">1.00</span></td><td>0.85 → <span class="flat">0.84</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>33</td><td>noisy_top_scorer</td><td>sql</td><td>0.44 → <span class="gain">1.00</span></td><td>0.79 → <span class="flat">0.75</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>34</td><td>noisy_rebounds</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.62 → <span class="gain">0.75</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>35</td><td>noisy_steals</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.85</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>36</td><td>noisy_blocks</td><td>sql</td><td>0.04 → <span class="gain">1.00</span></td><td>0.73 → <span class="flat">0.76</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>37</td><td>noisy_assists</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.72 → <span class="gain">0.86</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>38</td><td>noisy_3pm</td><td>sql</td><td>0.33 → <span class="gain">1.00</span></td><td>0.72 → <span class="flat">0.75</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>39</td><td>noisy_td3</td><td>sql</td><td>0.38 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">0.89</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="vnote">F↓, ctx↑</span></td></tr>
+  <tr><td>40</td><td>noisy_team_pts</td><td>sql</td><td>0.75 → <span class="gain">1.00</span></td><td>0.75 → <span class="flat">0.79</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>41</td><td>oob_last5</td><td>sql†</td><td>0.18 → <span class="gain">0.75</span></td><td>0.77 → <span class="gain">0.94</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr><td>42</td><td>oob_home_away</td><td>sql†</td><td>0.00 → <span class="gain">0.50</span></td><td>0.85 → <span class="gain">0.91</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr><td>43</td><td>oob_playoffs</td><td>sql†</td><td>0.58 → <span class="gain">1.00</span></td><td>0.88 → <span class="gain">0.95</span></td><td>0.33 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr><td>44</td><td>oob_vs_opponent</td><td>sql†</td><td>0.40 → <span class="loss">0.25</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
+  <tr><td>45</td><td>oob_quarter</td><td>sql†</td><td>0.45 → <span class="gain">1.00</span></td><td>0.83 → <span class="gain">0.88</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr><td>46</td><td>oob_clutch</td><td>sql†</td><td>0.21 → <span class="loss">0.00</span></td><td>0.76 → <span class="gain">0.93</span></td><td>0.20 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr><td>47</td><td>oob_salary</td><td>sql†</td><td>0.00 → <span class="flat">0.00</span></td><td>0.88 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
+  <tr><td>48</td><td>oob_month</td><td>sql†</td><td>0.12 → <span class="loss">0.00</span></td><td>0.83 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
+  <tr><td>49</td><td>oob_height</td><td>sql†</td><td>0.00 → <span class="gain">0.50</span></td><td>0.71 → <span class="gain">0.94</span></td><td>1.00 → <span class="flat">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr><td>50</td><td>oob_streak</td><td>both†</td><td>0.08 → <span class="gain">1.00</span></td><td>0.86 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
+  <tr><td>51</td><td>mix_sga</td><td>both</td><td>0.80 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.81</span></td><td>1.00 → <span class="loss">0.17</span></td><td>0.50 → <span class="gain">1.00</span></td><td><span class="vnote">CP↓ (réf. composée)</span></td></tr>
+  <tr><td>52</td><td>mix_cade</td><td>both</td><td>0.00 → <span class="gain">0.56</span></td><td>0.81 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>53</td><td>mix_haliburton</td><td>both</td><td>0.60 → <span class="gain">1.00</span></td><td>0.85 → <span class="gain">0.95</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.50 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>54</td><td>mix_edwards</td><td>both</td><td>0.30 → <span class="gain">0.78</span></td><td>0.84 → <span class="gain">0.92</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>55</td><td>mix_siakam</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.81 → <span class="gain">0.92</span></td><td>0.00 → <span class="gain">0.11</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>56</td><td>mix_trae</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>57</td><td>mix_lebron</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.85</span></td><td>0.00 → <span class="gain">0.14</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>58</td><td>mix_curry</td><td>both</td><td>0.08 → <span class="gain">0.50</span></td><td>0.78 → <span class="gain">0.83</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.50 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>59</td><td>mix_franz</td><td>both</td><td>0.00 → <span class="gain">0.50</span></td><td>0.84 → <span class="flat">0.82</span></td><td>0.00 → <span class="gain">0.42</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>60</td><td>mix_randle</td><td>sql</td><td>0.57 → <span class="loss">0.00</span></td><td>0.92 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.50 → <span class="flat">0.50</span></td><td><span class="loss">routé SQL, texte raté</span></td></tr>
+</table>
+<p style="font-size:.85rem;color:var(--muted)">* question texte mal routée vers SQL · † hors_couverture parti en SQL (attendu : refus). F = faithfulness · AR = answer_relevancy · CP = context_precision · CR = context_recall.<br>
+<b>Verdict :</b> <span class="badge ok">✅</span> amélioration nette · <span class="flat">—</span> stable · <span class="loss">texte rouge</span> régression · <span class="vnote">gris italique</span> nuance (métrique trompeuse). Pour les questions hors périmètre (†, hors moyennes) : <span class="gain">refus honnête</span> vs <span class="loss">confabulation</span>.</p>
+
+<h2><span class="num">4.</span>Cas instructifs : question originale, avant / après, et diagnostic</h2>
+
+<div class="qcard ok">
+  <h3>Le socle chiffré · num_top_rebounds <span class="badge ok">✅ la démonstration du brief</span></h3>
+  <div class="qorig"><b>Question :</b> « Quel joueur a capté le plus de rebonds ? » <span style="color:var(--muted)">· réf. : Ivica Zubac, 1008</span></div>
+  <div class="answers">
+    <div class="ans base"><span class="lab">baseline (RAG)</span>D'après la feuille « Analyse », <b>Shai Gilgeous-Alexander</b> est le seul joueur mentionné avec <b>68 rebonds offensifs</b>… il faudrait vérifier les rebonds totaux dans les données complètes.</div>
+    <div class="ans v2"><span class="lab">enrichi (SQL)</span>Le joueur ayant capté le plus de rebonds en saison régulière est <b>Ivica Zubac</b> avec un total de <b>1008 rebonds</b>.</div>
+  </div>
+  <div class="scores">F 0.56→1.00 · AR 0.85→0.93 · CP 0.00→1.00 · CR 0.00→1.00</div>
+  <p>La baseline lit le corpus texte (l'Excel aplati en chaîne), tombe sur un fragment de la feuille « Analyse » et confond
+  <b>rebonds offensifs</b> et <b>rebonds totaux</b> — elle propose un joueur faux (SGA, 68) puis se dérobe. L'assistant enrichi
+  génère <kbd class="sql">SELECT p.name, p.reb FROM players p ORDER BY p.reb DESC LIMIT 1</kbd> → <b>Zubac, 1008</b>, exact et
+  sourcé. C'est l'échec emblématique du prototype (les questions chiffrées) résolu : <b>recall 0.0 → 1.0</b>, et le motif se
+  répète sur toute la catégorie <code>simple_chiffre</code> (ctx_precision <b>1.000</b>).</p>
+</div>
+
+<div class="qcard ok">
+  <h3>Composition SQL + auto-récupération · num_top10_points_sum <span class="badge ok">✅ le retry qui sauve</span></h3>
+  <div class="qorig"><b>Question :</b> « Quelle est la somme des points marqués par les 10 meilleurs marqueurs de la ligue ? » <span style="color:var(--muted)">· réf. : 19 931</span></div>
+  <div class="answers">
+    <div class="ans base"><span class="lab">baseline (RAG)</span>Voici comment calculer la somme… 1. SGA → 2485 points (Source : feuille « Analyse »). <i>(Note : les autres joueurs du top 10 ne sont pas explicitement listés.)</i></div>
+    <div class="ans v2"><span class="lab">enrichi (SQL)</span>La somme… est de <b>19 931 points</b>. Détail : SGA 2485, Edwards 2180, Jokić 2072, Giannis 2037, Tatum 1930, Booker 1920, Herro 1840, Trae 1839, Cade 1827, Harden 1801.</div>
+  </div>
+  <div class="scores">F 0.22→1.00 · CP 0.00→1.00 · CR 0.00→1.00</div>
+  <p>La baseline ne peut pas agréger : elle voit un chiffre isolé et abandonne le calcul. Côté enrichi, la trace Logfire montre un
+  <b>échec puis une récupération</b> : la 1ʳᵉ requête <kbd class="sql">SELECT SUM(pts) … ORDER BY pts DESC LIMIT 10</kbd> est
+  <b>rejetée par PostgreSQL</b> (<span class="who gen">GroupingError</span> : on ne trie pas des lignes après les avoir agrégées en
+  une seule). L'erreur est <b>renvoyée au modèle</b>, qui réessaie et récupère les 10 lignes, puis la <span class="who synth">synthèse
+  de l'agent</span> en fait la somme correcte → <b>19 931</b>. L'échec <b>bruyant</b> (Postgres strict) a permis la récupération —
+  argument d'architecture (« échec bruyant &gt; échec silencieux »). La composition « agrégat sur top-N » reste toutefois la
+  faiblesse type des petits modèles (reco #2).</p>
+</div>
+
+<div class="qcard meh">
+  <h3>Dérivation « par match » · num_sga_ppg <span class="badge meh">⚠️ fausse régression : un artefact de mesure</span></h3>
+  <div class="qorig"><b>Question :</b> « Combien de points par match Shai Gilgeous-Alexander marque-t-il en moyenne cette saison ? » <span style="color:var(--muted)">· réf. : ~32,7 (2485 / 76)</span></div>
+  <div class="answers">
+    <div class="ans base"><span class="lab">baseline (RAG)</span>… un <b>total de 2 485 points</b>. Pour la moyenne, il faudrait diviser par le nombre de matchs (GP), mais cette information n'est pas directement visible dans l'extrait fourni.</div>
+    <div class="ans v2"><span class="lab">enrichi (SQL)</span>Shai Gilgeous-Alexander marque en moyenne <b>32 points par match</b> cette saison.</div>
+  </div>
+  <div class="scores">F 0.67→1.00 · CP 1.00→1.00 · CR 1.00→<b>0.00</b></div>
+  <p>Le tableau affiche un CR qui <b>chute de 1.00 à 0.00</b> : on croirait à une régression. C'est l'inverse.
+  <b>Ni l'un ni l'autre ne donne la bonne réponse (32,7)</b>, mais pour des raisons opposées :</p>
+  <p>• <b>Baseline — un CR 1.00 trompeur sur une non-réponse.</b> Elle <b>esquive</b> (« il faudrait diviser par GP… pas visible »).
+  Son contexte contient bien « SGA 2485 » (feuille « Analyse » aplatie) mais <b>pas le nombre de matchs (76)</b> — vérifié dans les
+  chunks. Le petit juge <code>mistral-small</code> a néanmoins crédité <b>toute</b> la référence sur la seule présence de « 2485 » :
+  <span class="who judge">faux positif du juge</span> (même laxisme que le fameux recall fantôme). Le CR 1.00 récompense une preuve
+  <i>incomplète</i> et une réponse <i>absente</i>.</p>
+  <p>• <b>enrichi — un CR 0.00 sur une vraie tentative.</b> Le garde-fou <b>ne sur-refuse pas</b> (bon point : « par match » = total ÷
+  <code>gp</code> est répondable). Mais la requête <kbd class="sql">SELECT p.pts / p.gp …</kbd> fait une <b>division entière</b> en
+  PostgreSQL (colonnes entières) → 2485 / 76 = <b>32</b> au lieu de <b>32,7</b>. La réponse est donc <i>fausse</i> face à la référence,
+  d'où CR 0.00 — cette fois le juge a raison.</p>
+  <p><b>À retenir :</b> le « −1.00 » de CR n'est <b>pas une perte de qualité</b> : la baseline scorait haut sur une esquive
+  (juge laxiste + preuve partielle), l'assistant score bas sur un calcul <i>presque</i> juste (bug d'arrondi). <b>Un score n'est pas
+  une preuve — il faut lire les données brutes.</b></p>
+  <p class="reco">💡 <b>Solution :</b> caster en flottant côté SQL — <kbd class="sql">SELECT pts * 1.0 / gp …</kbd>. <i>(reco #2)</i></p>
+</div>
+
+<div class="qcard ok">
+  <h3>Question mixte · mix_siakam <span class="badge ok">✅ fin d'une hallucination baseline</span></h3>
+  <div class="qorig"><b>Question :</b> « Pourquoi des fans jugent-ils Pascal Siakam sous-coté, et combien de points a-t-il marqués cette saison ? » <span style="color:var(--muted)">· réf. : impact sur la victoire + 1576 pts</span></div>
+  <div class="answers">
+    <div class="ans base"><span class="lab">baseline (RAG)</span>… D'après les données fournies, <b>Pascal Siakam a marqué 2 485 points</b> cette saison (source : regular+NBA.xlsx, Sheet « Analyse »)…</div>
+    <div class="ans v2"><span class="lab">enrichi (RAG + SQL)</span>Pascal Siakam a marqué <b>1576 points</b> cette saison. <b>Pourquoi sous-coté ?</b> D'après les discussions de fans, il excelle dans des aspects peu mis en avant par les stats traditionnelles…</div>
+  </div>
+  <div class="scores">F 0.00→1.00 · CP 0.00→0.11 · CR 0.00→0.50</div>
+  <p>Cas d'école du bug de flattening : la baseline attrape le <b>mauvais chunk d'Excel aplati</b> et attribue à Siakam les
+  <b>2485 points de SGA</b> — une hallucination pure, avec fausse source. L'assistant enrichi appelle <b>les deux outils</b> : SQL
+  pour le chiffre exact (1576) et RAG pour l'opinion des fans. Point clé de cette version : l'index texte <b>ne contient plus l'Excel
+  aplati</b>, donc la moitié RAG ne retombe plus sur des tableaux de chiffres — la réponse est enfin <b>ancrée</b>. La ctx_precision
+  reste basse (0.11) car RAGAS évalue une référence <b>composée</b> texte+chiffre : chaque contexte ne prouve qu'une moitié.</p>
+</div>
+
+<div class="qcard ko">
+  <h3>hors_couverture · le point faible partagé <span class="badge ko">❌ persiste des deux côtés</span></h3>
+  <div class="qorig"><b>Trois questions hors périmètre</b> — la base n'a ni détail temporel, ni taille, ni salaire. Attendu : refus.</div>
+  <p style="margin-top:2px"><b>① Refus honnête des deux côtés</b> — « Quel joueur a marqué le plus de points au mois de décembre ? »</p>
+  <div class="answers">
+    <div class="ans base"><span class="lab">baseline</span>Je n'ai pas accès à une répartition mensuelle… les feuilles contiennent des données globales de saison, pas de ventilation par mois.</div>
+    <div class="ans v2"><span class="lab">enrichi</span>L'information demandée n'est pas disponible dans la base. Seuls les totaux de saison régulière sont accessibles, sans détail par mois.</div>
+  </div>
+  <p><b>② Confabulation des deux côtés</b> — « Quel joueur a marqué le plus de points en playoffs cette saison ? »</p>
+  <div class="answers">
+    <div class="ans base"><span class="lab">baseline</span><b>SGA</b> … <b>2 485 points</b> en playoffs (source : feuille « Analyse »).</div>
+    <div class="ans v2"><span class="lab">enrichi</span>Le joueur ayant marqué le plus de points <b>en playoffs</b> cette saison est <b>Shai Gilgeous-Alexander</b> avec <b>2485 points</b>.</div>
+  </div>
+  <p><b>③ Le mode d'erreur change</b> — « Quel est le joueur le plus grand de la ligue ? »</p>
+  <div class="answers">
+    <div class="ans base"><span class="lab">baseline</span><b>Victor Wembanyama</b>, taille officielle <b>2,24 m (7 pieds 4 pouces)</b>… <i>(inventé depuis les connaissances du modèle)</i></div>
+    <div class="ans v2"><span class="lab">enrichi</span>Le joueur le plus grand est <b>Ivica Zubac</b> avec une taille de <b>1008</b> (unités non précisées dans la base).</div>
+  </div>
+  <p><b>Diagnostic :</b> l'hors-couverture reste le <b>point faible des deux systèmes</b>. La baseline hallucine tantôt depuis ses
+  <span class="who synth">poids</span> (Wembanyama 2,24 m), tantôt depuis l'<b>Excel aplati</b> (SGA « en playoffs »). L'assistant
+  enrichi, lui, a un <span class="who gen">générateur SQL sans droit de refus</span> : il produit toujours une requête, puis
+  <b>rhabille</b> le total de saison. <b>Ce que le garde-fou de périmètre change</b> : sur ① il obtient un <b>refus propre</b>, et sur
+  ③ il <b>cesse d'inventer une taille depuis ses poids</b> (progrès réel) — mais il mislabel alors 1008 rebonds en « taille », et sur
+  ② il confabule encore sans réserve. <b>Le garde-fou par prompt réduit sans supprimer</b> ; le correctif robuste est
+  <b>structurel</b> : permettre au tool SQL de renvoyer « non répondable » plutôt que de forcer une requête.</p>
+  <p class="reco">💡 <b>Solution :</b> signal « non répondable » au niveau du tool SQL (refus porté avant l'exécution), en complément du
+  garde-fou de l'agent. Et re-valider sur de nouvelles questions hors-schéma <b>et</b> dérivables.</p>
+</div>
+
+<div class="qcard ko">
+  <h3>Routing texte → SQL · txt_reggie_allstar <span class="badge ko">❌ ce qui plombe simple_texte</span></h3>
+  <div class="qorig"><b>Question :</b> « Combien de fois Reggie Miller a-t-il été sélectionné All-Star, un chiffre qui surprend un commentateur ? » <span style="color:var(--muted)">· réf. : 5 fois</span></div>
+  <div class="answers">
+    <div class="ans base"><span class="lab">baseline (RAG)</span>Reggie Miller a été sélectionné <b>5 fois</b> au NBA All-Star Game (1990, 1995, 1996, 1998, 2000). Un chiffre qui peut surprendre face à d'autres joueurs de la même époque…</div>
+    <div class="ans v2"><span class="lab">enrichi (SQL)</span>L'information sur le nombre de sélections All-Star de Reggie Miller n'est pas disponible dans la base. Je ne peux donc pas répondre.</div>
+  </div>
+  <div class="scores">F 0.62→1.00 · AR 0.86→<b>0.00</b> · CP 1.00→<b>0.00</b> · CR 1.00→<b>0.00</b></div>
+  <p><b>La baseline répond juste</b> (5 fois, via le thread Reddit). L'assistant, lui, a jugé « combien de fois » comme une question
+  chiffrée et l'a envoyée au SQL : <kbd class="sql">SELECT COUNT(*) FROM players WHERE name = 'Reggie Miller'</kbd> → <b>0</b> (Miller est
+  retraité, absent de la base). Il refuse alors honnêtement — mais c'est le <b>mauvais outil</b> : la réponse était dans le corpus texte.
+  <b>À elle seule, cette question mal routée fait chuter la catégorie simple_texte</b> (≈ −0.10 sur CP et sur CR). Aléa de
+  <span class="who route">routing</span> (le mot « combien » sur-déclenche le SQL), non déterministe.</p>
+</div>
+
+<div class="qcard meh">
+  <h3>Le verbatim corrige, la métrique ne voit pas · txt_randle_revelation <span class="badge meh">⚠️ juste, mais CR 0</span></h3>
+  <div class="qorig"><b>Question :</b> « Quel joueur des Timberwolves est décrit comme une "révélation" en playoffs pour son jeu physique de "bully ball" ? » <span style="color:var(--muted)">· réf. : Julius Randle</span></div>
+  <div class="answers">
+    <div class="ans base"><span class="lab">baseline (RAG)</span>Le joueur décrit comme une « révélation » est <b>Anthony Edwards</b> ! <i>(mauvais joueur)</i></div>
+    <div class="ans v2"><span class="lab">enrichi (RAG verbatim)</span>C'est <b>Julius Randle</b> : « Randle has been a revelation. His bully ball has worked perfectly on offense… »</div>
+  </div>
+  <div class="scores">F 0.12→<b>1.00</b> · AR 0.92→0.72 · CP 0.00→0.00 · CR 0.00→0.00</div>
+  <p><b>La baseline se trompe de joueur</b> (Edwards). L'assistant, la question posée <b>verbatim</b> au retriever, trouve le bon
+  (<b>Randle</b>) et <b>cite l'extrait Reddit exact</b> → faithfulness 0.12 → 1.00. Pourtant <b>CP/CR restent à 0</b> : la référence est en
+  français, les chunks en anglais OCRisé bruité, et le petit juge n'apparie pas les deux — <span class="who judge">faux négatif du
+  juge</span>. L'AR baisse même, le juge ayant trouvé la baseline <i>fausse mais confiante</i> plus « pertinente ».
+  <b>Réponse meilleure, score aveugle.</b></p>
+</div>
+
+<div class="qcard meh">
+  <h3>Bonne réponse, faithfulness 0 · txt_cade_pick <span class="badge meh">⚠️ « régression » = artefact OCR</span></h3>
+  <div class="qorig"><b>Question :</b> « De quel joueur des Pistons dit-on qu'il justifie son statut de premier choix de la draft 2021, malgré trop de pertes de balle ? » <span style="color:var(--muted)">· réf. : Cade Cunningham</span></div>
+  <div class="answers">
+    <div class="ans base"><span class="lab">baseline (RAG)</span>Le joueur… est <b>Jaden Ivey</b>. Pourquoi Ivey ? Son potentiel avant sa blessure… <i>(mauvais joueur)</i></div>
+    <div class="ans v2"><span class="lab">enrichi (RAG verbatim)</span><b>Cade Cunningham</b> est le joueur des Pistons cité comme justifiant son statut de premier choix 2021, malgré des critiques sur ses pertes de balle.</div>
+  </div>
+  <div class="scores">F 0.53→<b>0.00</b> · AR 0.98→0.97 · CP 0.00→0.00 · CR 0.00→0.00</div>
+  <p><b>La baseline se trompe</b> (Ivey). L'assistant donne le <b>bon joueur</b> (Cade) — mais faithfulness <b>0.00</b>. Le contexte
+  récupéré est du <b>charabia OCR</b> (fragments de threads mêlés, pseudos, timestamps) où la preuve n'est pas exploitable : le juge ne
+  peut pas <b>ancrer</b> la bonne réponse, alors que la réponse fausse d'Ivey était un peu plus « ancrée » (0.53). Le tableau affiche donc
+  « régression » <b>alors que la réponse est meilleure</b> — un <b>artefact du bruit OCR</b>, pas une perte de qualité.</p>
+</div>
+
+<div class="qcard ko">
+  <h3>Nom d'équipe littéral · num_team_total_rebounds <span class="badge ko">❌ régression SQL, non déterministe</span></h3>
+  <div class="qorig"><b>Question :</b> « Quel est le nombre total de rebonds captés par l'ensemble des joueurs d'Oklahoma City (OKC) cette saison ? » <span style="color:var(--muted)">· réf. : 3660</span></div>
+  <div class="answers">
+    <div class="ans base"><span class="lab">baseline (RAG)</span>Analyse basée sur les données disponibles… <i>(tente une réponse sans la bonne preuve)</i></div>
+    <div class="ans v2"><span class="lab">enrichi (SQL)</span>L'information n'est pas disponible dans la base.</div>
+  </div>
+  <div class="scores">F 0.59→<b>0.00</b> · CP 0.00→1.00 · CR 0.00→0.00</div>
+  <p>La requête filtre <kbd class="sql">WHERE t.name = 'Oklahoma City'</kbd> alors que le nom exact est <code>Oklahoma City Thunder</code>
+  → <b>SUM sur un ensemble vide → NULL</b> → l'assistant refuse honnêtement une question pourtant <b>répondable</b> (3660). La question
+  fournissait le <b>code</b> <code>OKC</code> ; <kbd class="sql">team_code = 'OKC'</kbd> suffisait. Sur un autre tirage la même question
+  réussit — <b>non déterministe</b> (reco #2 : préférer <code>team_code</code> / mapper les noms).</p>
+</div>
+
+<h2><span class="num">5.</span>Leçons transverses</h2>
+<div class="lesson"><b>1. Faithfulness ≠ justesse</b> (num_sga_ppg, hors_couverture) — la métrique mesure la fidélité de la réponse <i>au
+contexte</i>, pas la vérité du contexte. Un « 32 » ou un « SGA en playoffs » peut être parfaitement fidèle à un contexte SQL faux ou
+hors-cadre. Seul context_recall (vs la référence) l'attrape.</div>
+<div class="lesson"><b>2. RAGAS punit les refus corrects</b> (oob_month, oob_salary) — answer_relevancy 0 quand le système dit honnêtement
+« indisponible ». D'où l'exclusion de <code>hors_couverture</code> des moyennes et le jugement qualitatif.</div>
+<div class="lesson"><b>3. La qualité d'ingestion plafonne le contexte texte</b> (simple_texte, mixte) — même avec la question posée verbatim et
+l'Excel retiré de l'index, les chunks OCR bruités (fragments Reddit, pseudos, timestamps) empêchent souvent le juge de créditer la
+preuve, alors même que la réponse est correcte.</div>
+<div class="lesson"><b>4. Le text-to-SQL échoue par composition et par typage, pas par syntaxe</b> (num_top10_points_sum, num_sga_ppg,
+num_team_total_rebounds) — agrégat sur top-N, division entière, nom d'équipe exact : autant de pièges sémantiques que la génération du
+petit modèle franchit mal, de façon non déterministe.</div>
+<div class="lesson"><b>5. Un refus honnête demande une responsabilité assignée</b> (hors_couverture) — tant qu'aucun étage n'a le <i>droit</i> de
+refuser, le système habille toujours une réponse. Le garde-fou par prompt aide ; le refus structurel (tool SQL) serait décisif.</div>
+<div class="lesson"><b>6. L'observabilité a rendu chaque diagnostic possible</b> — SQL généré, retry après GroupingError, contexte récupéré :
+chaque « coupable » de ce rapport a été lu dans les predictions et les traces Logfire, span par span.</div>
+
+<h2><span class="num">6.</span>Recommandations actionnables</h2>
+<div class="note">À valider sur de <b>nouvelles</b> questions — jamais sur ce benchmark (pas de jeu de validation).</div>
+<table>
+  <tr><th>#</th><th>Recommandation</th><th>Cible</th></tr>
+  <tr><td>1</td><td><b>Refus structurel</b> : permettre au tool SQL de renvoyer « non répondable » quand la question sort du schéma, au lieu de forcer une requête</td><td>hors_couverture (playoffs, height, clutch…)</td></tr>
+  <tr><td>2</td><td><b>Modèle SQL plus capable + few-shots ciblés</b> : agrégat-sur-sous-requête, cast <kbd class="sql">pts*1.0/gp</kbd>, mapping des noms d'équipe</td><td>num_top10, num_sga_ppg, num_team_total_rebounds</td></tr>
+  <tr><td>3</td><td><b>Durcir la frontière de routing</b> : opinion / efficacité / « combien de fois » sur une personne → RAG</td><td>txt_reggie_allstar, mix_randle</td></tr>
+  <tr><td>4</td><td><b>Nettoyage de l'ingestion OCR</b> (texte bruité → chunks propres) pour relever ctx_precision/recall texte et mixte</td><td>simple_texte, mixte</td></tr>
+</table>
+
+<h2><span class="num">7.</span>Limites du comparatif</h2>
+<ul>
+  <li><b>Juge <code>mistral-small-2506</code></b> (contrainte free tier) : scores indicatifs ; le <b>delta</b> est le signal. Plusieurs réponses hors-couverture fausses obtiennent faithfulness 1.0.</li>
+  <li><b>Run unique, routing non déterministe</b> (température 0.1 ≠ 0) : certaines régressions (num_team_total_rebounds, txt_reggie_allstar) tiennent au tirage, pas au système.</li>
+  <li><b>Catégorie <code>mixte</code> généreuse envers l'assistant</b> : le RAG seul ne peut pas répondre à la moitié chiffrée ; sa ctx_precision basse (0.23) est en partie un artefact de mesure (référence composée).</li>
+  <li><b>Corpus texte OCR bruité</b> : plafonne les métriques de contexte même quand la réponse est correcte.</li>
+  <li><b>n = 10 par catégorie</b> : lire les lignes autant que les agrégats.</li>
+</ul>
+
+<footer>
+  Projet OC P10 · SportSee — Éval RAGAS d'un assistant NBA (RAG + SQL) · Harness : <code>eval/evaluate_ragas.py</code> ·
+  Sources : <code>baseline_20260701_131415.json</code> · <code>enriched_v2_20260701_164513.json</code> ·
+  Observabilité : Logfire <code>kl-38/oc-p10</code> · Benchmark : 60 questions vérifiées deux fois
+</footer>
+
+</div>
+</body>
+</html>

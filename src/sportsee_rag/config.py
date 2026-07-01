@@ -68,15 +68,20 @@ class Settings(BaseSettings):
     vector_db_dir: Path = PROJECT_ROOT / "vector_db"
     sqlite_db_file: Path = PROJECT_ROOT / "db" / "nba.sqlite"  # local fallback DB
 
+    # Index filename suffix: "" = full corpus (PDF + flattened Excel);
+    # "_pdf" = PDF-only variant (Excel dropped, retrieved via SQL instead).
+    # Both variants live in the same vector_db_dir; override via model_copy.
+    index_variant: str = ""
+
     @property
     def faiss_index_file(self) -> Path:
-        """Path to the persisted FAISS index."""
-        return self.vector_db_dir / "faiss_index.idx"
+        """Path to the persisted FAISS index (variant-suffixed)."""
+        return self.vector_db_dir / f"faiss_index{self.index_variant}.idx"
 
     @property
     def document_chunks_file(self) -> Path:
         """Path to the persisted chunks (jsonl, not pickle — portable & safe)."""
-        return self.vector_db_dir / "document_chunks.jsonl"
+        return self.vector_db_dir / f"document_chunks{self.index_variant}.jsonl"
 
     @property
     def excel_file(self) -> Path:

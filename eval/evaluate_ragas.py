@@ -79,6 +79,9 @@ METRIC_NAMES = ["faithfulness", "answer_relevancy", "context_precision", "contex
 # Excluded from the headline average: RAGAS scores refusals/out-of-coverage poorly
 # (noisy, even anti-correlated with correct behaviour) — reported on its own line.
 AGGREGATE_EXCLUDE = {"hors_couverture"}
+# Systems that run through the Pydantic AI agent (RAG + SQL routing). enriched_v2
+# is enriched on a PDF-only FAISS index (flattened Excel dropped from retrieval).
+AGENT_SYSTEMS = {"enriched", "enriched_v2"}
 
 
 # --- 1. generation --------------------------------------------------------
@@ -100,7 +103,7 @@ def _generate_one(system: str, request, *, agent, manager, sql_tool, settings,
     """
     for attempt in range(1, max_attempts + 1):
         try:
-            if system == "enriched":
+            if system in AGENT_SYSTEMS:
                 return ask_agent(request, agent=agent, manager=manager,
                                  sql_tool=sql_tool, settings=settings)
             return answer_question(request, manager=manager, settings=settings)
@@ -128,7 +131,7 @@ def generate_predictions(
     """
     samples: list[dict] = []
     agent = sql_tool = None
-    if system == "enriched":
+    if system in AGENT_SYSTEMS:
         # Built once and reused: the SqlTool reflects the schema at startup
         # and the agent is stateless across runs (no message history).
         sql_tool = SqlTool(settings=settings)
@@ -143,7 +146,7 @@ def generate_predictions(
             "id": q["id"],
             "category": q["category"],
             "expected": q.get("expected"),
-            "used_tool": answer.used_tool if system == "enriched" else None,
+            "used_tool": answer.used_tool if system in AGENT_SYSTEMS else None,
             "user_input": q["question"],
             "response": answer.answer,
             "retrieved_contexts": answer.contexts or ["(aucun contexte récupéré)"],
@@ -328,9 +331,10 @@ def write_reports(samples: list[dict], score_rows: list[dict], *, system: str, l
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the RAGAS evaluation harness (modern stack).")
-    parser.add_argument("--system", choices=["baseline", "enriched"], default="baseline",
-                        help="System under test: frozen text-only RAG pipeline, or the "
-                             "SQL-enriched Pydantic AI agent. Same harness either way.")
+    parser.add_argument("--system", choices=["baseline", "enriched", "enriched_v2"], default="baseline",
+                        help="System under test: frozen text-only RAG pipeline (baseline), the "
+                             "SQL-enriched agent (enriched), or the same agent on a PDF-only index "
+                             "(enriched_v2 — flattened Excel removed from retrieval). Same harness.")
     parser.add_argument("--label", default=None,
                         help="Report filename label (defaults to --system).")
     parser.add_argument("--limit", type=int, default=None, help="Evaluate only the first N questions.")
@@ -351,9 +355,16 @@ def main() -> None:
     logger.info("Loaded %d questions (system=%s, label=%s, judge=%s, strictness=%d)",
                 len(questions), args.system, label, args.judge_model, args.strictness)
 
-    manager = VectorStoreManager(settings=settings)
+    # enriched_v2 retrieves from the PDF-only index variant (same vector_db_dir,
+    # "_pdf" filename); baseline/enriched use the full-corpus index.
+    index_settings = (
+        settings.model_copy(update={"index_variant": "_pdf"})
+        if args.system == "enriched_v2" else settings
+    )
+    manager = VectorStoreManager(settings=index_settings)
     if manager.index is None:
-        raise SystemExit("Index introuvable — lance d'abord `uv run python scripts/build_index.py`.")
+        hint = "build_index.py --pdf-only" if args.system == "enriched_v2" else "build_index.py"
+        raise SystemExit(f"Index introuvable — lance d'abord `uv run python scripts/{hint}`.")
 
     logger.info("--- Generation (%s) ---", args.system)
     samples = generate_predictions(questions, system=args.system, manager=manager,

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synthèse RAGAS — 3 systèmes · SportSee P10</title>
+<style>
+  :root { --bg:#f6f8fa; --card:#fff; --ink:#1f2430; --muted:#6a7280; --line:#e3e7ee;
+    --accent:#2563eb; --good:#157f3d; --good-bg:#e7f6ec; --bad:#b3261e; --bad-bg:#fdebea; --warn:#92600a; --warn-bg:#fdf3df; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI",system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--ink); line-height:1.5; }
+  .wrap { max-width:1000px; margin:0 auto; padding:30px 24px 50px; }
+  header.hero { background:linear-gradient(120deg,#1e293b,#1e3a8a 60%,#312e81); color:#fff; border-radius:14px; padding:26px 32px; margin-bottom:22px; }
+  header.hero h1 { margin:0 0 6px; font-size:1.5rem; }
+  header.hero p { margin:3px 0; color:#cbd5f5; font-size:.92rem; }
+  header.hero code { background:rgba(255,255,255,.12); padding:1px 7px; border-radius:5px; color:#e2e8ff; }
+  .steps { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .step { background:rgba(255,255,255,.1); border-radius:8px; padding:8px 12px; font-size:.85rem; color:#e2e8ff; flex:1; min-width:180px; }
+  .step b { color:#fff; }
+  .verdict { background:var(--good-bg); border:1px solid #bfe6cd; color:#0f5c2c; border-radius:12px; padding:14px 20px; font-size:1.02rem; margin-bottom:26px; }
+  .verdict b { color:var(--good); }
+  h2 { font-size:1.15rem; margin:30px 0 12px; padding-bottom:5px; border-bottom:2px solid var(--line); }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; font-size:.92rem; }
+  th { background:#eef2f8; text-align:left; padding:9px 12px; font-weight:600; }
+  td { padding:8px 12px; border-top:1px solid var(--line); }
+  tr:nth-child(even) td { background:#fafbfd; }
+  .arrow { color:var(--muted); padding:0 2px; }
+  .gain { color:var(--good); font-weight:700; } .loss { color:var(--bad); font-weight:700; } .flat { color:var(--muted); }
+  .b0 { color:var(--muted); } .b1 { color:#475569; }
+  .cards { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:6px; }
+  .fcard { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--line); border-radius:10px; padding:14px 18px; }
+  .fcard.s1 { border-left-color:#2563eb; } .fcard.s2 { border-left-color:#7c3aed; }
+  .fcard.ok { border-left-color:#2da55d; } .fcard.ko { border-left-color:#d6453c; }
+  .fcard h3 { margin:0 0 6px; font-size:1rem; }
+  .fcard p { margin:0; font-size:.9rem; color:#333b48; }
+  ol.recos { padding-left:20px; } ol.recos li { margin:7px 0; font-size:.92rem; }
+  .done { color:var(--good); font-weight:700; }
+  footer { margin-top:34px; color:var(--muted); font-size:.8rem; border-top:1px solid var(--line); padding-top:12px; }
+  @media (max-width:640px){ .cards{ grid-template-columns:1fr; } }
+  @media print { body{ background:#fff } .wrap{ padding:0 } header.hero{ border-radius:0 } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Évaluation RAGAS — progression sur 3 systèmes</h1>
+  <p>Assistant NBA SportSee · 60 questions (6 catégories) · juge <code>mistral-small-2506</code> · harness identique, seul <code>--system</code> change</p>
+  <div class="steps">
+    <div class="step"><b>① baseline</b> — RAG texte seul (Excel aplati)</div>
+    <div class="step"><b>② enriched</b> — + agent, routing RAG / SQL, question verbatim</div>
+    <div class="step"><b>③ enriched_v2</b> — + index PDF-only + garde-fou périmètre</div>
+  </div>
+</header>
+
+<div class="verdict">
+  Le gros du gain vient de l'<b>étape ② (le SQL)</b> : les réponses chiffrées passent de quasi-inexistantes à exactes. L'<b>étape ③</b>
+  affine sur deux fronts ciblés — l'<b>index sans l'Excel aplati</b> relève le texte et le mixte, le <b>garde-fou</b> transforme
+  quelques confabulations en refus honnêtes.
+</div>
+
+<h2>Scores globaux (hors <code>hors_couverture</code>)</h2>
+<table>
+  <tr><th>métrique</th><th>① baseline</th><th>② enriched</th><th>③ enriched_v2</th></tr>
+  <tr><td>faithfulness</td><td class="b0">0.355</td><td class="b1">0.850</td><td><span class="gain">0.878</span></td></tr>
+  <tr><td>answer_relevancy</td><td class="b0">0.759</td><td class="b1">0.876</td><td><span class="loss">0.833</span></td></tr>
+  <tr><td>context_precision</td><td class="b0">0.166</td><td class="b1">0.632</td><td><span class="gain">0.712</span></td></tr>
+  <tr><td>context_recall</td><td class="b0">0.260</td><td class="b1">0.717</td><td><span class="gain">0.757</span></td></tr>
+</table>
+<p style="font-size:.88rem;color:var(--muted)">③ dépasse ② sur faithfulness, précision et recall de contexte. Le recul d'answer_relevancy en ③ est <b>attendu</b> : plus de refus honnêtes sur les questions hors-couverture, que le juge pénalise.</p>
+
+<h2>Par catégorie (① <span class="arrow">→</span> ② <span class="arrow">→</span> ③)</h2>
+<table>
+  <tr><th>catégorie</th><th>faithfulness</th><th>answer_relevancy</th><th>context_precision</th><th>context_recall</th></tr>
+  <tr><td>simple_texte</td><td>0.57 <span class="arrow">→</span> 0.69 <span class="arrow">→</span> <span class="gain">0.86</span></td><td>0.89 <span class="arrow">→</span> 0.81 <span class="arrow">→</span> <span class="loss">0.80</span></td><td>0.43 <span class="arrow">→</span> 0.23 <span class="arrow">→</span> <span class="loss">0.33</span></td><td>0.80 <span class="arrow">→</span> 0.60 <span class="arrow">→</span> <span class="loss">0.70</span></td></tr>
+  <tr><td>simple_chiffre</td><td>0.33 <span class="arrow">→</span> 0.93 <span class="arrow">→</span> <span class="gain">1.00</span></td><td>0.61 <span class="arrow">→</span> 0.90 <span class="arrow">→</span> <span class="gain">0.92</span></td><td>0.10 <span class="arrow">→</span> 1.00 <span class="arrow">→</span> <span class="gain">1.00</span></td><td>0.10 <span class="arrow">→</span> 0.70 <span class="arrow">→</span> <span class="gain">0.70</span></td></tr>
+  <tr><td>complexe_chiffre</td><td>0.37 <span class="arrow">→</span> 0.90 <span class="arrow">→</span> <span class="gain">0.90</span></td><td>0.77 <span class="arrow">→</span> 0.94 <span class="arrow">→</span> <span class="gain">0.83</span></td><td>0.10 <span class="arrow">→</span> 0.80 <span class="arrow">→</span> <span class="gain">1.00</span></td><td>0.10 <span class="arrow">→</span> 0.83 <span class="arrow">→</span> <span class="gain">0.73</span></td></tr>
+  <tr><td>bruite</td><td>0.27 <span class="arrow">→</span> 0.87 <span class="arrow">→</span> <span class="gain">0.90</span></td><td>0.69 <span class="arrow">→</span> 0.82 <span class="arrow">→</span> <span class="gain">0.81</span></td><td>0.10 <span class="arrow">→</span> 0.90 <span class="arrow">→</span> <span class="gain">1.00</span></td><td>0.10 <span class="arrow">→</span> 0.90 <span class="arrow">→</span> <span class="gain">1.00</span></td></tr>
+  <tr><td>mixte</td><td>0.23 <span class="arrow">→</span> 0.86 <span class="arrow">→</span> <span class="gain">0.73</span></td><td>0.84 <span class="arrow">→</span> 0.90 <span class="arrow">→</span> <span class="flat">0.80</span></td><td>0.10 <span class="arrow">→</span> 0.23 <span class="arrow">→</span> <span class="gain">0.23</span></td><td>0.20 <span class="arrow">→</span> 0.55 <span class="arrow">→</span> <span class="gain">0.65</span></td></tr>
+  <tr><td><i>hors_couverture (hors agrégat)</i></td><td>0.20 <span class="arrow">→</span> 0.52 <span class="arrow">→</span> <span class="gain">0.50</span></td><td>0.74 <span class="arrow">→</span> 0.79 <span class="arrow">→</span> <span class="loss">0.56</span></td><td>0.25 <span class="arrow">→</span> 0.25 <span class="arrow">→</span> <span class="loss">0.20</span></td><td>0.20 <span class="arrow">→</span> 0.30 <span class="arrow">→</span> <span class="loss">0.10</span></td></tr>
+</table>
+<div class="note" style="background:#eef5ff;border-left-color:var(--accent);font-size:.92rem">
+<b>hors_couverture — a-t-il botté en touche ?</b> (10 questions hors périmètre)
+<table style="margin-top:8px">
+  <tr><th></th><th>① baseline</th><th>② enriched</th><th>③ enriched_v2</th></tr>
+  <tr><td>✅ refus honnête</td><td>20 %</td><td>20 %</td><td><b class="gain">40 %</b></td></tr>
+  <tr><td>❌ confabulation</td><td>60 %</td><td>70 %</td><td>60 %</td></tr>
+  <tr><td>❌ hallucination</td><td>20 %</td><td>10 %</td><td><b class="gain">0 %</b></td></tr>
+</table>
+</div>
+
+<h2>Ce que chaque étape apporte</h2>
+<div class="cards">
+  <div class="fcard s1"><h3>② Le SQL — le grand saut</h3>
+    <p>Les catégories chiffrées et bruitées passent de ctx_precision ~0.1 à 0.8-1.0 : l'agent route vers une base relationnelle et cite des chiffres exacts, là où le RAG texte échouait (Excel non indexable sémantiquement).</p></div>
+  <div class="fcard s2"><h3>③ Index PDF-only — texte &amp; mixte</h3>
+    <p>En retirant l'Excel aplati de l'index texte, <code>simple_texte</code> monte (F 0.69 → 0.86) et le mixte cesse de retomber sur des tableaux de chiffres (ex. Siakam : la moitié texte redevient ancrée).</p></div>
+  <div class="fcard ok"><h3>③ Garde-fou — des refus honnêtes</h3>
+    <p>Décrire le périmètre (totaux de saison, pas de détail temporel) + interdire le ré-étiquetage transforme plusieurs confabulations en refus (« pas de détail par mois ») et arrête l'invention de données depuis les poids (la taille).</p></div>
+  <div class="fcard ko"><h3>La limite qui demeure</h3>
+    <p>L'hors-couverture reste imparfait : le générateur SQL n'a pas de <i>droit de refus</i>, donc certaines questions (playoffs) sont encore habillées. Le correctif robuste est structurel, pas un prompt.</p></div>
+</div>
+
+<h2>Priorités</h2>
+<ol class="recos">
+  <li><b>Question verbatim au RAG</b> + <b>index PDF-only</b> — <span class="done">✅ faits &amp; mesurés</span> (texte et mixte relevés).</li>
+  <li><b>Refus structurel</b> : le tool SQL doit pouvoir répondre « non répondable » — la vraie parade à l'hors-couverture.</li>
+  <li><b>Modèle SQL plus capable</b> : composition (agrégat sur top-N), division non entière, mapping des noms d'équipe.</li>
+  <li><b>Nettoyage de l'ingestion OCR</b> : relever la précision de contexte texte, qui plafonne malgré des réponses correctes.</li>
+</ol>
+
+<footer>
+  OC P10 · SportSee — Éval RAGAS (RAG + SQL) · Sources : <code>baseline_20260701_131415</code> · <code>enriched_20260701_135319</code> ·
+  <code>enriched_v2_20260701_164513</code> · Détail : <code>comparatif_baseline_v2.html</code> · Logfire <code>kl-38/oc-p10</code>
+</footer>
+
+</div>
+</body>
+</html>
