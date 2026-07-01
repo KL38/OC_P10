@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparatif RAGAS — baseline vs enrichi · SportSee P10</title>
+<style>
+  :root {
+    --bg: #f6f8fa; --card: #ffffff; --ink: #1f2430; --muted: #6a7280;
+    --line: #e3e7ee; --accent: #2563eb; --accent2: #7c3aed;
+    --good: #157f3d; --good-bg: #e7f6ec; --bad: #b3261e; --bad-bg: #fdebea;
+    --warn: #92600a; --warn-bg: #fdf3df;
+    --base-bar: #b8c2d4; --enr-bar: #2563eb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+         background: var(--bg); color: var(--ink); line-height: 1.55; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px; }
+  header.hero { background: linear-gradient(120deg, #1e293b, #1e3a8a 60%, #312e81);
+                color: #fff; border-radius: 14px; padding: 30px 34px; margin-bottom: 28px; }
+  header.hero h1 { margin: 0 0 6px; font-size: 1.65rem; letter-spacing: .2px; }
+  header.hero p { margin: 4px 0; color: #cbd5f5; font-size: .95rem; }
+  header.hero code { background: rgba(255,255,255,.12); padding: 1px 7px; border-radius: 5px; color: #e2e8ff; }
+  h2 { font-size: 1.25rem; margin: 38px 0 14px; padding-bottom: 6px; border-bottom: 2px solid var(--line); }
+  h2 .num { color: var(--accent); margin-right: 8px; }
+  .note { background: var(--warn-bg); border-left: 4px solid #d9a514; padding: 10px 16px;
+          border-radius: 0 8px 8px 0; font-size: .92rem; margin: 14px 0; }
+  /* KPI cards */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .kpi .name { font-size: .85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+  .kpi .vals { display: flex; align-items: baseline; gap: 10px; margin: 6px 0 10px; }
+  .kpi .vals .b { color: var(--muted); font-size: 1.05rem; text-decoration: line-through 1.5px rgba(106,114,128,.45); }
+  .kpi .vals .e { font-size: 1.7rem; font-weight: 700; }
+  .delta { font-weight: 700; font-size: .92rem; padding: 2px 9px; border-radius: 999px; }
+  .delta.up { color: var(--good); background: var(--good-bg); }
+  .delta.down { color: var(--bad); background: var(--bad-bg); }
+  .bars { margin-top: 8px; }
+  .bar { display: flex; align-items: center; gap: 8px; font-size: .75rem; color: var(--muted); margin-top: 4px; }
+  .bar .track { flex: 1; height: 8px; background: #eef1f6; border-radius: 5px; overflow: hidden; }
+  .bar .fill { height: 100%; border-radius: 5px; }
+  .bar.base .fill { background: var(--base-bar); }
+  .bar.enr .fill { background: var(--enr-bar); }
+  .bar .lbl { width: 62px; }
+  /* tables */
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line);
+          border-radius: 10px; overflow: hidden; font-size: .9rem; }
+  th { background: #eef2f8; text-align: left; padding: 9px 12px; font-weight: 600; }
+  td { padding: 8px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+  tr:nth-child(even) td { background: #fafbfd; }
+  .arrow { color: var(--muted); padding: 0 2px; }
+  .gain { color: var(--good); font-weight: 700; }
+  .loss { color: var(--bad); font-weight: 700; }
+  .flat { color: var(--muted); }
+  /* verdict badges */
+  .badge { display: inline-block; font-size: .78rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+  .ok   { background: var(--good-bg); color: var(--good); }
+  .ko   { background: var(--bad-bg); color: var(--bad); }
+  .meh  { background: var(--warn-bg); color: var(--warn); }
+  /* question cards */
+  .qcard { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--line);
+           border-radius: 10px; padding: 16px 20px; margin: 14px 0; }
+  .qcard.ok   { border-left-color: #2da55d; }
+  .qcard.ko   { border-left-color: #d6453c; }
+  .qcard.meh  { border-left-color: #e0a82e; }
+  .qcard h3 { margin: 0 0 4px; font-size: 1.02rem; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .qcard .meta { font-size: .8rem; color: var(--muted); margin-bottom: 8px; }
+  .qcard .scores { font-family: Consolas, monospace; font-size: .82rem; background: #f3f5f9;
+                   border-radius: 7px; padding: 6px 10px; display: inline-block; margin-bottom: 10px; }
+  .qcard p { margin: 7px 0; font-size: .93rem; }
+  .who { font-weight: 700; }
+  .who.gen  { color: #9d3fd1; }
+  .who.refo { color: #c2570e; }
+  .who.synth{ color: #b3261e; }
+  .who.judge{ color: #15648f; }
+  kbd.sql { font-family: Consolas, monospace; background: #f0f3f8; border: 1px solid var(--line);
+            border-radius: 5px; padding: 1px 6px; font-size: .82rem; }
+  .reco { background: #eef5ff; border-left: 3px solid var(--accent); padding: 7px 12px;
+          border-radius: 0 7px 7px 0; font-size: .9rem; margin: 10px 0 2px; }
+  .reco b:first-child { color: var(--accent); }
+  .lesson { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+            padding: 13px 18px; margin: 10px 0; font-size: .93rem; }
+  .lesson b:first-child { color: var(--accent); }
+  footer { margin-top: 44px; color: var(--muted); font-size: .82rem; border-top: 1px solid var(--line); padding-top: 14px; }
+  @media print { body { background:#fff } .wrap{ padding:0 } header.hero{ border-radius:0 } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Comparatif RAGAS — RAG baseline vs système enrichi SQL</h1>
+  <p>Projet P10 SportSee · Assistant NBA · 16 questions · juge <code>mistral-small-2506</code> · 0 NaN sur les deux runs</p>
+  <p>Runs : <code>baseline_20260609_212658</code> (RAG texte seul, Excel aplati) → <code>enriched_20260610_162008</code> (agent Pydantic AI, routing RAG / SQL)</p>
+  <p>Harness strictement identique (<code>evaluate_ragas.py</code>) — seul le flag <code>--system</code> change.</p>
+</header>
+
+<div class="note"><b>Intégrité méthodologique :</b> aucun correctif appliqué après lecture des résultats — chaque échec est documenté, pas patché.
+Corriger le système sur les questions du benchmark (n=16, sans jeu de validation) reviendrait à optimiser sur le jeu de test.
+<code>hors_couverture</code> est exclu des moyennes : RAGAS n'évalue pas correctement les refus (cf. leçon 2).</div>
+
+<h2><span class="num">1.</span>Scores globaux (hors <code>hors_couverture</code>)</h2>
+<div class="kpis">
+  <div class="kpi">
+    <div class="name">Faithfulness</div>
+    <div class="vals"><span class="b">0.387</span><span class="e">0.821</span><span class="delta up">+0.434</span></div>
+    <div class="bars">
+      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:39%"></div></div></div>
+      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:82%"></div></div></div>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="name">Answer relevancy</div>
+    <div class="vals"><span class="b">0.821</span><span class="e">0.784</span><span class="delta down">−0.037</span></div>
+    <div class="bars">
+      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:82%"></div></div></div>
+      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:78%"></div></div></div>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="name">Context precision</div>
+    <div class="vals"><span class="b">0.137</span><span class="e">0.643</span><span class="delta up">+0.506</span></div>
+    <div class="bars">
+      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:14%"></div></div></div>
+      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:64%"></div></div></div>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="name">Context recall</div>
+    <div class="vals"><span class="b">0.286</span><span class="e">0.619</span><span class="delta up">+0.333</span></div>
+    <div class="bars">
+      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:29%"></div></div></div>
+      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:62%"></div></div></div>
+    </div>
+  </div>
+</div>
+<p>Le <b>faithfulness double</b> (les réponses citent les sorties d'outils au lieu de broder) ; les métriques de
+contexte décollent de quasi-zéro. Le léger recul d'answer&nbsp;relevancy a deux causes identifiées et localisées
+(Q11 : refus correct puni par le juge ; Q4 : artefact de réponse) — voir le détail.</p>
+
+<h2><span class="num">2.</span>Scores par catégorie</h2>
+<table>
+  <tr><th>catégorie</th><th>faithfulness</th><th>answer_relevancy</th><th>context_precision</th><th>context_recall</th></tr>
+  <tr><td>simple_chiffre</td>
+      <td>0.283 <span class="arrow">→</span> <span class="gain">0.875</span></td>
+      <td>0.899 <span class="arrow">→</span> <span class="gain">0.941</span></td>
+      <td>0.000 <span class="arrow">→</span> <span class="gain">0.750</span></td>
+      <td>0.000 <span class="arrow">→</span> <span class="gain">0.750</span></td></tr>
+  <tr><td>complexe_chiffre</td>
+      <td>0.322 <span class="arrow">→</span> <span class="gain">1.000</span></td>
+      <td>0.665 <span class="arrow">→</span> <span class="flat">0.671</span></td>
+      <td>0.000 <span class="arrow">→</span> <span class="gain">0.750</span></td>
+      <td>0.000 <span class="arrow">→</span> <span class="gain">0.417</span></td></tr>
+  <tr><td>bruite</td>
+      <td>0.243 <span class="arrow">→</span> <span class="gain">0.833</span></td>
+      <td>0.859 <span class="arrow">→</span> <span class="flat">0.867</span></td>
+      <td>0.000 <span class="arrow">→</span> <span class="gain">0.500</span></td>
+      <td>0.000 <span class="arrow">→</span> <span class="gain">0.500</span></td></tr>
+  <tr><td>simple_texte</td>
+      <td>0.628 <span class="arrow">→</span> <span class="loss">0.583</span></td>
+      <td>0.882 <span class="arrow">→</span> <span class="loss">0.699</span></td>
+      <td>0.479 <span class="arrow">→</span> <span class="flat">0.500</span></td>
+      <td>1.000 <span class="arrow">→</span> <span class="loss">0.750</span></td></tr>
+  <tr><td><i>hors_couverture (hors agrégat)</i></td>
+      <td><i>0.091 → 0.833</i></td><td><i>0.450 → 0.923</i></td><td><i>0.500 → 0.000</i></td><td><i>0.000 → 0.500</i></td></tr>
+</table>
+<p>Le delta est exactement là où le SQL devait le mettre : le <b>recall chiffré passe de 0.0 partout</b> à 0.75 / 0.42.
+La <b>régression <code>simple_texte</code></b> n'est pas du bruit : trois causes localisées (Q1 : reformulation,
+Q4 : retrieval + génération, artefacts d'adaptateur) — la branche RAG est inchangée, mais <i>ce qu'on lui donne à manger ne l'est plus</i>.</p>
+
+<p><b>Routing :</b> 12 × sql, 4 × rag — zéro erreur de routing sur les questions couvertes. Les 2 <code>hors_couverture</code>
+(attendu : refus) sont parties en SQL : sonder la base serait acceptable, le problème est le <i>maquillage du résultat</i> (Q15, Q16).</p>
+
+<h2><span class="num">3.</span>Détail par question</h2>
+<table>
+  <tr><th>#</th><th>id</th><th>outil</th><th>F</th><th>AR</th><th>CP</th><th>CR</th><th>verdict</th></tr>
+  <tr><td>1</td><td>txt_impressive_duo</td><td>rag</td><td>0.80 → <span class="loss">0.00</span></td><td>0.90 → 0.86</td><td>0.00 → 0.00</td><td>1.00 → <span class="loss">0.00</span></td><td><span class="badge ko">❌ régression</span></td></tr>
+  <tr><td>2</td><td>txt_reggie_miller</td><td>rag</td><td>0.46 → <span class="gain">1.00</span></td><td>0.85 → <span class="gain">1.00</span></td><td>1.00 → 1.00</td><td>1.00 → 1.00</td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>3</td><td>txt_nba_marketing</td><td>rag</td><td>1.00 → 1.00</td><td>0.93 → 0.94</td><td>0.92 → 1.00</td><td>1.00 → 1.00</td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>4</td><td>txt_homecourt_analogy</td><td>rag</td><td>0.25 → 0.33</td><td>0.85 → <span class="loss">0.00</span></td><td>0.00 → 0.00</td><td>1.00 → 1.00</td><td><span class="badge ko">❌ déjà KO avant</span></td></tr>
+  <tr><td>5</td><td>num_count_over_2000</td><td>sql</td><td>0.33 → <span class="gain">1.00</span></td><td>0.94 → 0.98</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>6</td><td>num_best_3pct</td><td>sql</td><td>0.00 → 0.50</td><td>0.90 → 0.95</td><td>0.00 → 0.00</td><td>0.00 → 0.00</td><td><span class="badge ko">❌</span></td></tr>
+  <tr><td>7</td><td>num_top_assists</td><td>sql</td><td>0.13 → <span class="gain">1.00</span></td><td>0.84 → 0.91</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>8</td><td>num_top_rebounds</td><td>sql</td><td>0.67 → <span class="gain">1.00</span></td><td>0.91 → 0.93</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>9</td><td>num_best_plusminus</td><td>sql</td><td>0.25 → <span class="gain">1.00</span></td><td>0.90 → 0.90</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>10</td><td>num_compare_okc_min</td><td>sql</td><td>0.32 → <span class="gain">1.00</span></td><td>0.79 → 0.84</td><td>0.00 → 0.00</td><td>0.00 → <span class="gain">0.67</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>11</td><td>num_team_total_rebounds</td><td>sql</td><td>0.10 → <span class="gain">1.00</span></td><td>0.97 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → 0.00</td><td><span class="badge meh">⚠️ refus propre</span></td></tr>
+  <tr><td>12</td><td>num_top10_points_sum</td><td>sql</td><td>0.63 → 1.00</td><td>0.00 → 0.95</td><td>0.00 → 1.00</td><td>0.00 → <span class="loss">0.00</span></td><td><span class="badge ko">❌ cas d'école</span></td></tr>
+  <tr><td>13</td><td>noisy_3pct</td><td>sql</td><td>0.09 → 0.67</td><td>0.87 → 0.88</td><td>0.00 → 0.00</td><td>0.00 → 0.00</td><td><span class="badge ko">❌</span></td></tr>
+  <tr><td>14</td><td>noisy_count</td><td>sql</td><td>0.40 → <span class="gain">1.00</span></td><td>0.85 → 0.85</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>15</td><td>oob_last5</td><td>sql*</td><td>0.18 → 0.67</td><td>0.00 → 0.95</td><td>1.00 → 0.00</td><td>0.00 → 1.00</td><td><span class="badge ko">❌ dangereux</span></td></tr>
+  <tr><td>16</td><td>oob_home_away</td><td>sql*</td><td>0.00 → 1.00</td><td>0.90 → 0.90</td><td>0.00 → 0.00</td><td>0.00 → 0.00</td><td><span class="badge ko">❌</span></td></tr>
+</table>
+<p style="font-size:.85rem;color:var(--muted)">* attendu : <code>none</code> (refus). F = faithfulness · AR = answer_relevancy · CP = context_precision · CR = context_recall.</p>
+<p><b>Bilan absolu enrichi : 7 ✅ · 1 ⚠️ · 6 ❌</b> (+2 hors agrégat). Le bilan <i>relatif</i> est le vrai résultat :
+la baseline n'avait <b>aucune</b> réponse chiffrée correcte (10 questions à recall 0.0) ; l'enrichi en réussit 7/10,
+chiffres exacts au point près.</p>
+
+<h2><span class="num">4.</span>Chaque déviation expliquée : le coupable et la raison</h2>
+
+<div class="qcard ko">
+  <h3>Q1 · txt_impressive_duo <span class="badge ko">❌ la régression la plus instructive</span></h3>
+  <div class="meta">« Quel duo de l'Orlando Magic les fans encensent-ils ? » · attendu rag · obtenu rag</div>
+  <div class="scores">F 0.80→0.00 · AR 0.90→0.86 · CP 0→0 · CR 1.00→0.00</div>
+  <p><b>Constat :</b> réponse <i>correcte</i> (Wagner + Banchero), mais la preuve est absente des contextes récupérés.</p>
+  <p><b>Coupable :</b> <span class="who refo">la reformulation de l'agent</span>. Vérifié dans Logfire : le tool RAG a reçu
+  <kbd class="sql">"duo Orlando Magic fans encensent"</kbd> — la question compressée en mots-clés. Rien de perdu sémantiquement,
+  mais l'embedding d'une liste de mots-clés ≠ celui d'une question : le retrieval devient plat
+  (scores FAISS 75.8 / 74.2 / 74.1 / 74.0 / 73.7 — aucun chunk ne se détache, 4/5 viennent du mauvais thread).</p>
+  <p><b>D'où vient la bonne réponse alors ?</b> Des <i>poids du modèle</i> — violation de « fonde ta réponse uniquement sur
+  les outils ». Le faithfulness 0.0 est un <b>vrai positif</b> : réponse juste <i>sans preuve</i> = même mécanisme que la
+  confabulation de Q15, le dé est juste tombé du bon côté.</p>
+  <p class="reco">💡 <b>Solution :</b> transmettre la question utilisateur <b>verbatim</b> au tool RAG (1 ligne dans la docstring du tool). <i>(reco #1)</i></p>
+</div>
+
+<div class="qcard ok">
+  <h3>Q2 · txt_reggie_miller <span class="badge ok">✅</span></h3>
+  <div class="meta">« Première option offensive la plus efficace des playoffs ? » · rag</div>
+  <div class="scores">F 0.46→1.00 · AR 0.85→1.00 · CP 1.00→1.00 · CR 1.00→1.00</div>
+  <p>La baseline « animait le débat » (réponse longue, brodée) ; l'agent répond court et ancré → faithfulness au plafond.</p>
+  <p><b>Artefact :</b> fragment <kbd class="sql">{"question": ...}</kbd> en fin de réponse — trace de l'adaptateur
+  <code>MistralCompatChatModel</code> (contenu Mistral chunké, aplati). Cette réponse <b>crashait avant l'adaptateur</b> ;
+  elle passe désormais avec un défaut cosmétique. Crash → artefact : bon échange.</p>
+</div>
+
+<div class="qcard ok">
+  <h3>Q3 · txt_nba_marketing <span class="badge ok">✅</span></h3>
+  <div class="meta">« Quel reproche les fans adressent-ils à la NBA… ? » · rag</div>
+  <div class="scores">F 1.00→1.00 · AR 0.93→0.94 · CP 0.92→1.00 · CR 1.00→1.00</div>
+  <p>Stable au plafond sur les deux systèmes — et c'est la question qui <b>plantait l'agent</b> avant l'adaptateur
+  OpenAI-compat : elle valide le correctif en conditions réelles.</p>
+</div>
+
+<div class="qcard ko">
+  <h3>Q4 · txt_homecourt_analogy <span class="badge ko">❌ déjà KO en baseline — et le recall 1.0 est un faux positif du juge</span></h3>
+  <div class="meta">« Quelle équipe de NHL a joué à l'extérieur avant la finale ? » · rag · réf. : les Oilers (3 tours à l'extérieur avant la finale)</div>
+  <div class="scores">F 0.25→0.33 · AR 0.85→0.00 · CP 0→0 · CR 1.00→1.00 (à tort)</div>
+  <p><b>Constat :</b> réponse <i>fausse</i> (« jamais arrivé ») — et, inspection des chunks à l'appui (traces), la
+  <b>vraie preuve n'est pas dans les contextes</b>. Le seul passage « Oilers » récupéré est un encart r/hockey disant
+  qu'ils <i>ont</i> l'avantage de la glace en finale — pas qu'ils ont joué les trois tours précédents à l'extérieur
+  (l'affirmation de la référence). Le chunk où le fan fait l'analogie n'a pas été remonté.</p>
+  <p><b>Coupables en cascade :</b>
+  ① <span class="who refo">le retrieval</span> — signature plate à nouveau (79.4 / 79.1 / 78.8 / 78.0 / 77.7, dont
+  2 chunks hors sujet) : le bon passage n'est pas remonté ;
+  ② <span class="who gen">la génération</span> — a répondu « jamais arrivé » en lisant le fil <b>NBA</b> voisin
+  (« Never happened… ») : confusion de périmètre NBA/NHL ;
+  ③ <span class="who judge">le juge</span> — <b>recall 1.0 à tort, sur les deux runs</b> : il a crédité la référence
+  sur la simple co-occurrence Oilers / finale / avantage, sans vérifier l'affirmation précise. Les métriques contexte
+  de <code>mistral-small</code> sont laxistes face au paraphrasé proche.</p>
+  <p><b>Leçon :</b> un score de métrique n'est pas une preuve — la localisation d'une panne exige la <b>lecture des
+  données brutes</b> : ce recall 1.0 aurait fait conclure, à tort, que le retrieval était sain.</p>
+  <p>Relevancy 0.00 probablement aggravée par l'artefact <kbd class="sql">{"question": ...}</kbd> (cf. Q2).</p>
+  <p class="reco">💡 <b>Solution :</b> deux leviers côté retrieval — <b>améliorer l'ingestion</b> (l'OCR des PDF scannés
+  produit des chunks très bruités qui dégradent les embeddings : nettoyage du texte OCR, re-chunking) et/ou
+  <b>élargir la recherche</b> (k &gt; 5, re-ranking) pour faire remonter le passage clé. Côté génération, un modèle plus
+  attentif au cadre (NBA vs NHL) aiderait. Le recall 1.0 fantôme, lui, relève du juge (§ Limites) — aucune retouche
+  du système ne le corrige.</p>
+</div>
+
+<div class="qcard ok">
+  <h3>Q5 · num_count_over_2000 <span class="badge ok">✅</span></h3>
+  <div class="meta">« Combien de joueurs &gt; 2000 points ? » · sql · réf. : 4</div>
+  <div class="scores">F 0.33→1.00 · AR 0.94→0.98 · CP 0→1.00 · CR 0→1.00</div>
+  <p><kbd class="sql">SELECT COUNT(*) FROM players WHERE pts &gt; 2000</kbd> → <b>4</b>, exact. Le cas nominal du text-to-SQL : quatuor parfait.</p>
+</div>
+
+<div class="qcard ko">
+  <h3>Q6 · num_best_3pct <span class="badge ko">❌</span></h3>
+  <div class="meta">« Meilleur % à 3 points (minimum 200 tentatives) ? » · sql · réf. : LaVine 44.6 %</div>
+  <div class="scores">F 0.00→0.50 · AR 0.90→0.95 · CP 0→0 · CR 0→0</div>
+  <p><b>Constat :</b> le filtre est dans la question, la règle dans le prompt, le pattern dans le few-shot
+  (<kbd class="sql">fta &gt;= 300</kbd>)… et la requête générée n'a <b>pas de WHERE</b> → Alondes Williams, 100 % (volume infime).</p>
+  <p><b>Coupable :</b> <span class="who gen">la génération SQL</span> — <b>vérifié dans Logfire</b> : le tool a reçu
+  <kbd class="sql">"Quel joueur a le meilleur pourcentage à 3 points (minimum 200 tentatives) cette saison régulière NBA ?"</kbd> —
+  la reformulation est innocente (le filtre a survécu, la question a même été <i>enrichie</i> du cadre temporel).
+  C'est le générateur SQL qui a ignoré « minimum 200 tentatives » malgré la règle explicite du prompt et le few-shot
+  <kbd class="sql">fta &gt;= 300</kbd> qui montre exactement ce pattern : l'exemple ne suffit pas à garantir le transfert.
+  <i>Demi-point :</i> le modèle a flairé l'anomalie (« semble anormalement élevé ») — l'instinct était bon, la requête non.</p>
+  <p class="reco">💡 <b>Solution :</b> <b>modèle plus capable pour la génération SQL</b> — le few-shot existait déjà et
+  la consigne <i>explicite</i> a quand même été ignorée : c'est l'instruction-following du petit modèle qui plafonne, pas le prompt. <i>(reco #2)</i></p>
+</div>
+
+<div class="qcard ok">
+  <h3>Q7 / Q8 / Q9 · top passes · top rebonds · meilleur +/- <span class="badge ok">✅✅✅</span></h3>
+  <div class="meta">sql · réf. : Trae Young 882 · Ivica Zubac 1008 · SGA +12.1</div>
+  <div class="scores">CR 0.00→1.00 sur les trois · chiffres exacts au point près</div>
+  <p>Q8 est <b>l'échec emblématique de la baseline</b> (le RAG répondait à côté sur les rebonds) :
+  recall 0.0 → 1.0, c'est l'avant/après du brief en une ligne.</p>
+</div>
+
+<div class="qcard ok">
+  <h3>Q10 · num_compare_okc_min <span class="badge ok">✅ comportement émergent</span></h3>
+  <div class="meta">« Compare le meilleur marqueur d'OKC et celui de Minnesota » · sql</div>
+  <div class="scores">F 0.32→1.00 · AR 0.79→0.84 · CP 0→0 · CR 0→0.67</div>
+  <p>L'agent a <b>décomposé seul</b> la comparaison en <b>2 requêtes successives</b> (top OKC, puis top MIN) —
+  non programmé. Réponse exacte (SGA 2485 vs Edwards 2180). CP/CR partiels : le juge évalue chaque contexte isolément
+  contre la référence <i>globale</i> — chacun ne prouve que la moitié. Limite de lecture sur les réponses multi-requêtes.</p>
+</div>
+
+<div class="qcard meh">
+  <h3>Q11 · num_team_total_rebounds <span class="badge meh">⚠️ refus propre, puni par le juge</span></h3>
+  <div class="meta">« Total des rebonds des joueurs d'Oklahoma City (OKC) ? » · sql · réf. : 3660</div>
+  <div class="scores">F 0.10→1.00 · AR 0.97→0.00 · CP 0→1.00 · CR 0→0</div>
+  <p><b>Coupable :</b> <span class="who gen">la génération SQL</span> — <kbd class="sql">WHERE t.name = 'Oklahoma City'</kbd>
+  alors que le nom exact est <code>Oklahoma City Thunder</code> → somme sur ensemble vide → NULL. Ironique : la question
+  fournissait le <b>code</b> <code>OKC</code> ; <kbd class="sql">team_code = 'OKC'</kbd> suffisait.</p>
+  <p><b>Le point clé :</b> l'agent a répondu « information non disponible » — <b>exactement le comportement demandé</b>
+  (ne pas inventer)… et le juge le sanctionne : <b>relevancy 0.00</b>. RAGAS punit les refus corrects. Sans cette ligne,
+  le −0.04 global d'answer_relevancy disparaît quasiment.</p>
+  <p class="reco">💡 <b>Solution :</b> <b>préférer <code>team_code</code></b> quand un code est fourni, et mapper vers les
+  valeurs exactes de <code>teams.name</code> sinon — l'utilisateur peut employer n'importe quel surnom (« OKC »,
+  « le Thunder », « Oklahoma »…), le prompt doit rendre ce mapping explicite. <i>(reco #3)</i></p>
+</div>
+
+<div class="qcard ko">
+  <h3>Q12 · num_top10_points_sum <span class="badge ko">❌ le cas d'école du run</span></h3>
+  <div class="meta">« Somme des points des 10 meilleurs marqueurs ? » · sql · réf. : 19 931</div>
+  <div class="scores">F 0.63→<b>1.00</b> · AR 0.00→0.95 · CP 0→1.00 · CR 0→<b>0.00</b></div>
+  <p><b>Le film :</b> 1ʳᵉ requête <kbd class="sql">SUM(pts) … ORDER BY pts LIMIT 10</kbd> → <b>rejetée par PostgreSQL</b>
+  (GroupingError : on ne trie pas ce qui est agrégé en une ligne). La boucle Pydantic AI renvoie l'erreur au modèle, qui
+  <b>réessaie seul</b> : <kbd class="sql">SUM(p.pts) OVER ()</kbd> — window function <i>syntaxiquement valide</i>…
+  qui somme les <b>569 joueurs</b> (280 015) au lieu des 10 meilleurs. Réponse auto-incohérente : « 280 015 points »
+  suivi de la liste des 10 joueurs dont la somme fait visiblement ~20 000.</p>
+  <p><b>Coupables en cascade :</b> <span class="who gen">la génération SQL</span> (le pattern « agrégat d'un top-N »
+  exige une sous-requête — absent des few-shots, composition à deux étages, faiblesse typique des petits modèles),
+  la boucle de retry, qui a retransformé l'échec <i>bruyant</i> en erreur <i>silencieuse</i>, <b>et</b>
+  <span class="who synth">la synthèse de l'agent</span>, qui a livré une réponse <b>auto-incohérente</b> —
+  280 015 annoncé juste au-dessus d'une liste de 10 joueurs qui somme visiblement ~20 000 — sans tiquer.</p>
+  <p><b>La leçon en or : faithfulness 1.0 sur une réponse fausse.</b> La réponse est parfaitement fidèle à un contexte
+  qui est lui-même faux — <i>faithfulness mesure l'ancrage, pas la vérité</i>. Seul context_recall (comparé à la référence) l'attrape.</p>
+  <p class="reco">💡 <b>Solution :</b> triple levier — few-shot <b>agrégat-sur-sous-requête</b>, <b>meilleur modèle de
+  génération SQL</b> (la composition est la marche des petits modèles), et <b>meilleur modèle d'agent</b> pour la
+  synthèse : un sanity check minimal (la somme annoncée vs la liste affichée juste en dessous) suffisait à repérer
+  la contradiction. <i>(reco #2)</i></p>
+</div>
+
+<div class="qcard ko">
+  <h3>Q13 · noisy_3pct <span class="badge ko">❌</span></h3>
+  <div class="meta">« kel joueur a le meilleur pourcentage a 3pts?? » · sql · réf. : LaVine 44.6 %</div>
+  <div class="scores">F 0.09→0.67 · AR 0.87→0.88 · CP 0→0 · CR 0→0</div>
+  <p>Robuste au bruit orthographique (SQL syntaxiquement correct) mais sans filtre de volume → Alondes Williams 100 %.</p>
+  <p><b>Coupable partagé :</b> ici la question <i>ne mentionne pas</i> le filtre (contrairement à Q6) — la référence attend
+  un filtre <i>implicite</i> (bon sens basket). <span class="who gen">Génération SQL</span> sans heuristique de volume,
+  mais aussi <span class="who judge">conception de la référence</span> qui suppose une inférence non spécifiée.
+  Limite de conception d'éval autant que du système.</p>
+  <p class="reco">💡 <b>Solution :</b> <b>heuristique de volume minimal</b> sur les ratios (<code>*_pct</code>) dans le
+  prompt SQL quand la question n'en précise pas (ex. tentatives ≥ seuil ligue). <i>(reco #5)</i></p>
+</div>
+
+<div class="qcard ok">
+  <h3>Q14 · noisy_count <span class="badge ok">✅</span></h3>
+  <div class="meta">« kombien de joueur on marké plus de 1.5k pts cet saison?? » · sql · réf. : 23</div>
+  <div class="scores">F 0.40→1.00 · AR 0.85→0.85 · CP 0→1.00 · CR 0→1.00</div>
+  <p><kbd class="sql">COUNT(*) … pts &gt; 1500</kbd> → <b>23</b>, exact. La robustesse orthographique est <i>gratuite</i>
+  avec un LLM (vs un parseur classique) — argument d'architecture.</p>
+</div>
+
+<div class="qcard ko">
+  <h3>Q15 · oob_last5 <span class="badge ko">❌ le mode d'échec le plus dangereux</span></h3>
+  <div class="meta">« Meilleur % à 3 pts sur les 5 derniers matchs ? » · attendu : refus (donnée inexistante) · obtenu : sql</div>
+  <div class="scores">F 0.18→0.67 · AR 0.00→0.95 · CP 1.00→0.00 · CR 0→1.00</div>
+  <p><b>Constat :</b> la base n'a aucun détail par match. Le modèle a généré une requête <i>saison</i>
+  (filtre <kbd class="sql">fg3a &gt;= 200</kbd> correct !) et présenté le résultat comme « sur les <b>5 derniers matchs</b> » —
+  donnée vraie, <b>étiquette fausse</b>, aplomb total. Du <b>maquillage de cadre</b> : ni refus, ni chiffre inventé —
+  une réinterprétation silencieuse de la question.</p>
+  <p><b>Coupable : une responsabilité de cohérence non assignée — défaut de design, pas d'un seul maillon.</b>
+  Le prompt SQL dit <i>« Génère UNE requête répondant à la question »</i> : <span class="who gen">le générateur</span>
+  n'a <b>aucun droit de refus</b>, il est structurellement obligé de produire quelque chose — ici il a silencieusement
+  abandonné « 5 derniers matchs ». Puis <span class="who synth">la synthèse</span> a rhabillé le résultat saison en
+  « 5 derniers matchs ». Dans l'architecture actuelle, <b>aucun étage n'est chargé de détecter qu'une question sort
+  du schéma</b> — même mécanisme qu'en Q16.</p>
+  <p><b>RAGAS est aveugle</b> (relevancy 0.95, recall 1.0 contre une référence qui dit… que la donnée n'existe pas) :
+  validation magistrale de l'exclusion de <code>hors_couverture</code> de l'agrégat.</p>
+  <p class="reco">💡 <b>Solution :</b> garde-fou de périmètre dans les <b>instructions de l'agent</b> — règle de
+  granularité (refuser toute question exigeant le détail de matchs précis : sous-période, date, domicile/extérieur,
+  adversaire) avec l'exception dérivable (« par match » = total ÷ <code>gp</code> : répondable).</p>
+</div>
+
+<div class="qcard ko">
+  <h3>Q16 · oob_home_away <span class="badge ko">❌</span></h3>
+  <div class="meta">« Compare les rebonds domicile / extérieur » · attendu : refus · obtenu : sql</div>
+  <div class="scores">F 0.00→1.00 · AR 0.90→0.90 · CP 0→0 · CR 0→0</div>
+  <p><b>Constat :</b> le modèle a <b>inventé une liste d'équipes « à domicile »</b> dans le SQL lui-même :
+  <kbd class="sql">CASE WHEN team_code IN ('BOS','GSW','LAL','LAC','PHX')…</kbd> — hallucination structurelle.</p>
+  <p><b>Coupable :</b> le même <b>défaut de design qu'en Q15</b> (responsabilité hors-couverture non assignée) —
+  <span class="who gen">le générateur SQL</span>, sans droit de refus, va cette fois jusqu'à <b>fabriquer</b> une
+  sémantique inexistante (la liste d'équipes « domicile » inventée). <span class="who synth">La synthèse</span> a,
+  elle, <i>signalé</i> l'incohérence (« valeurs inversées ou incomplètes… ») mais a quand même livré les chiffres.
+  <i>Demi-point</i> pour l'instinct de doute.</p>
+  <p class="reco">💡 <b>Solution :</b> même garde-fou qu'en Q15 — l'agent refuse <b>avant</b> d'appeler le tool :
+  le générateur n'est plus jamais exposé au hors-schéma, la fabrication disparaît. <i>(reco #4 ; accessoirement #2.)</i></p>
+</div>
+
+<h2><span class="num">5.</span>Leçons transverses</h2>
+<div class="lesson"><b>1. Faithfulness ≠ justesse</b> (Q12) — la métrique mesure la fidélité de la réponse <i>au contexte</i>,
+pas la vérité du contexte. Une chaîne peut être « fidèle à un contexte faux ». D'où le faisceau des 4 métriques + références vérifiées.</div>
+<div class="lesson"><b>2. RAGAS punit les refus corrects</b> (Q11, Q15, Q16) — relevancy 0 quand le système dit honnêtement
+« indisponible », scores flatteurs quand il confabule avec aplomb. → <code>hors_couverture</code> hors agrégat + jugement
+qualitatif : décision de Phase 2 doublement validée.</div>
+<div class="lesson"><b>3. La reformulation de l'agent est un facteur de variance du retrieval</b> (Q1 — innocentée en Q6,
+vérifié dans les traces : le filtre avait survécu à la reformulation) — le retriever est figé, mais la requête qui y entre
+ne l'est plus. Tout maillon LLM intercalé déplace le comportement des maillons suivants.</div>
+<div class="lesson"><b>4. Échec bruyant &gt; échec silencieux</b> (Q12, et l'inverse en Q11) — PostgreSQL strict, validation
+Pydantic, rôle SELECT-only : tout ce qui refuse fort vaut mieux que tout ce qui devine. Le retry automatique peut
+<i>retransformer</i> un échec bruyant en erreur silencieuse.</div>
+<div class="lesson"><b>5. Le text-to-SQL échoue par composition, pas par syntaxe</b> (Q12, Q16) — requêtes plates fiables ;
+compositions (agrégat-sur-top-N) et demandes hors schéma produisent du SQL plausible et faux. La marche est sémantique.</div>
+<div class="lesson"><b>6. L'observabilité a rendu chaque diagnostic possible</b> — reformulations (args des tool calls),
+SQL généré, scores FAISS : chaque « coupable » de ce rapport a été identifié dans une trace Logfire, span par span.</div>
+
+<h2><span class="num">6.</span>Recommandations actionnables</h2>
+<div class="note">À valider sur de <b>nouvelles</b> questions — jamais sur ce benchmark (n=16, pas de jeu de validation : retoucher
+le système sur ses propres questions d'éval reviendrait à optimiser le jeu de test).</div>
+<table>
+  <tr><th>#</th><th>Recommandation</th><th>Cible</th><th>Coût</th></tr>
+  <tr><td>1</td><td>Passer la question utilisateur <b>verbatim</b> au tool RAG (docstring : « pass the user's question unchanged »)</td><td>Q1</td><td>1 ligne</td></tr>
+  <tr><td>2</td><td><b>Montée en gamme des modèles</b> : few-shot agrégat-sur-sous-requête + <b>modèle plus capable pour la
+      génération SQL</b> (Q6/Q12/Q16 : instruction-following et composition) <b>et pour l'agent</b> (Q12 : une synthèse
+      capable de repérer une réponse auto-incohérente)</td><td>Q6, Q12, Q16</td><td>3 lignes / config</td></tr>
+  <tr><td>3</td><td>Prompt SQL : <b>préférer <code>team_code</code></b> quand un code est fourni ; sinon mapper vers les valeurs
+      exactes de <code>teams.name</code> (l'utilisateur peut employer n'importe quel surnom)</td><td>Q11</td><td>2 lignes</td></tr>
+  <tr><td>4</td><td>Hors-couverture : <b>garde-fou porté par l'agent seul</b> — formulation « règle de granularité +
+      exception dérivable » (pas de liste de mots-clés) ; générateur SQL inchangé ; <b>validation sur de nouvelles
+      questions des deux côtés de la frontière</b> (hors-couverture vraies ET dérivables pièges, ex. « points par
+      match ») ; risque résiduel documenté</td><td>Q15, Q16</td><td>~5 lignes</td></tr>
+  <tr><td>5</td><td>Heuristique de volume minimal sur les ratios (<code>*_pct</code>) quand la question n'en précise pas</td><td>Q13</td><td>prompt SQL</td></tr>
+</table>
+<p style="font-size:.88rem;color:var(--muted)">La limite du juge (refus punis, recall laxiste — Q4, Q11, Q15) reste documentée
+en § Limites : c'est une limite d'<b>évaluation</b>, pas une action sur le système.</p>
+
+<h2><span class="num">7.</span>Limites du comparatif</h2>
+<ul>
+  <li><b>Juge <code>mistral-small-2506</code></b> (contrainte free tier) : scores indicatifs ; le <b>delta</b> est le signal,
+  pas les valeurs absolues. Exemple concret : le <b>recall 1.0 de Q4 est un faux positif</b> (référence créditée sur une
+  co-occurrence Oilers/finale/avantage, alors que l'affirmation précise est absente des chunks) — détecté uniquement
+  par lecture des contextes bruts.</li>
+  <li><b>Run unique, routing non déterministe</b> (température 0.1 ≠ 0) : le routing observé (12 sql / 4 rag) est cohérent mais pas garanti reproductible à l'identique.</li>
+  <li><b>n = 16</b> : les moyennes par catégorie reposent sur 2 à 4 questions — lire les lignes, pas seulement les agrégats.</li>
+  <li>Artefact <code>{"question": ...}</code> dans 2 réponses texte (adaptateur OpenAI-compat) : cosmétique mais pénalise probablement la relevancy de Q4.</li>
+</ul>
+
+<footer>
+  Projet OC P10 · SportSee — Évaluation RAGAS d'un assistant NBA (RAG + SQL) ·
+  Harness : <code>eval/evaluate_ragas.py</code> (flag <code>--system</code>) ·
+  Sources : <code>baseline_20260609_212658.json</code> · <code>enriched_20260610_162008.json</code> ·
+  Observabilité : Logfire (projet <code>kl-38/oc-p10</code>)
+</footer>
+
+</div>
+</body>
+</html>

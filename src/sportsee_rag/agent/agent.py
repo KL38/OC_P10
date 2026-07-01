@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from typing import Literal, cast
 
 from openai.types import chat
 from pydantic_ai import Agent, RunContext
@@ -58,7 +59,7 @@ Règles de réponse :
   l'information n'est pas disponible dans la base — ne réponds pas de mémoire.
 - Réponds en français, de façon concise et factuelle."""
 
-_NO_CONTEXT = "Aucune information pertinente trouvée dans la base de données pour cette question."
+_NO_CONTEXT = "Aucune information pertinente trouvée dans les commentaires de match pour cette question."
 
 
 class MistralCompatChatModel(OpenAIChatModel):
@@ -75,7 +76,7 @@ class MistralCompatChatModel(OpenAIChatModel):
     1.106.0, still on main as of 2026-06) — re-check on upgrade.
     """
 
-    def _validate_completion(self, response: chat.ChatCompletion):
+    def _validate_completion(self, response: chat.ChatCompletion) -> chat.ChatCompletion:
         for choice in response.choices:
             content = choice.message.content
             if isinstance(content, list):
@@ -105,6 +106,7 @@ class AgentTrace:
 class AgentDeps:
     """Dependencies injected into every agent run."""
 
+    question: str
     manager: VectorStoreManager
     sql_tool: SqlTool
     search_k: int
@@ -131,10 +133,15 @@ def build_agent(model: Model | None = None, settings: Settings | None = None) ->
     )
 
     @agent.tool
-    def search_match_commentary(ctx: RunContext[AgentDeps], question: str) -> str:
+    def search_match_commentary(ctx: RunContext[AgentDeps]) -> str:
         """Search the indexed match commentary (Reddit threads) for passages
         relevant to a textual/opinion question. Returns the retrieved passages."""
-        results = ctx.deps.manager.search(question, k=ctx.deps.search_k)
+        # No query argument on purpose (reco #1): retrieval runs on the *verbatim*
+        # user question (ctx.deps.question), not an LLM-reformulated one. The model
+        # keeps the routing choice (RAG vs SQL) but loses control of the query text
+        # — LLM keyword-compression flattened the FAISS scores and pulled wrong
+        # chunks (proven in Logfire on Q1).
+        results = ctx.deps.manager.search(ctx.deps.question, k=ctx.deps.search_k)
         ctx.deps.trace.tools_used.add("rag")
         if not results:
             return _NO_CONTEXT
@@ -182,6 +189,7 @@ def ask_agent(
 
     trace = AgentTrace()
     deps = AgentDeps(
+        question=request.question,
         manager=manager,
         sql_tool=sql_tool,
         search_k=request.k or settings.search_k,
@@ -189,6 +197,7 @@ def ask_agent(
     )
     result = agent.run_sync(request.question, deps=deps)
 
+    used_tool: Literal["rag", "sql", "both", "none"]
     if not trace.tools_used:
         used_tool = "none"
         # No tool = no evidence: the answer came from model weights alone.
@@ -196,7 +205,8 @@ def ask_agent(
     elif trace.tools_used == {"rag", "sql"}:
         used_tool = "both"
     else:
-        used_tool = next(iter(trace.tools_used))
+        # The set holds exactly one of the two tool names here.
+        used_tool = cast(Literal["rag", "sql"], next(iter(trace.tools_used)))
     logger.info("Agent answered (tool=%s, %d contexts)", used_tool, len(trace.contexts))
     return RagAnswer(
         answer=result.output,

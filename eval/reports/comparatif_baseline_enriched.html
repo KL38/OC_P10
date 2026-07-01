@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comparatif RAGAS — baseline vs enrichi · SportSee P10</title>
+<title>Comparatif RAGAS — baseline vs enrichi · SportSee P10 (60 questions)</title>
 <style>
   :root {
     --bg: #f6f8fa; --card: #ffffff; --ink: #1f2430; --muted: #6a7280;
@@ -25,7 +25,6 @@
   h2 .num { color: var(--accent); margin-right: 8px; }
   .note { background: var(--warn-bg); border-left: 4px solid #d9a514; padding: 10px 16px;
           border-radius: 0 8px 8px 0; font-size: .92rem; margin: 14px 0; }
-  /* KPI cards */
   .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
   .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
   .kpi .name { font-size: .85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
@@ -42,7 +41,6 @@
   .bar.base .fill { background: var(--base-bar); }
   .bar.enr .fill { background: var(--enr-bar); }
   .bar .lbl { width: 62px; }
-  /* tables */
   table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line);
           border-radius: 10px; overflow: hidden; font-size: .9rem; }
   th { background: #eef2f8; text-align: left; padding: 9px 12px; font-weight: 600; }
@@ -52,12 +50,10 @@
   .gain { color: var(--good); font-weight: 700; }
   .loss { color: var(--bad); font-weight: 700; }
   .flat { color: var(--muted); }
-  /* verdict badges */
   .badge { display: inline-block; font-size: .78rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
   .ok   { background: var(--good-bg); color: var(--good); }
   .ko   { background: var(--bad-bg); color: var(--bad); }
   .meh  { background: var(--warn-bg); color: var(--warn); }
-  /* question cards */
   .qcard { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--line);
            border-radius: 10px; padding: 16px 20px; margin: 14px 0; }
   .qcard.ok   { border-left-color: #2da55d; }
@@ -90,360 +86,323 @@
 
 <header class="hero">
   <h1>Comparatif RAGAS — RAG baseline vs système enrichi SQL</h1>
-  <p>Projet P10 SportSee · Assistant NBA · 16 questions · juge <code>mistral-small-2506</code> · 0 NaN sur les deux runs</p>
-  <p>Runs : <code>baseline_20260609_212658</code> (RAG texte seul, Excel aplati) → <code>enriched_20260610_162008</code> (agent Pydantic AI, routing RAG / SQL)</p>
+  <p>Projet P10 SportSee · Assistant NBA · <b>60 questions</b> · 6 catégories × 10 · juge <code>mistral-small-2506</code> · 0 NaN sur les deux runs</p>
+  <p>Runs : <code>baseline_20260701_131415</code> (RAG texte seul, Excel aplati) → <code>enriched_20260701_135319</code> (agent Pydantic AI, routing RAG / SQL, question <b>verbatim</b> au tool RAG)</p>
   <p>Harness strictement identique (<code>evaluate_ragas.py</code>) — seul le flag <code>--system</code> change.</p>
 </header>
 
-<div class="note"><b>Intégrité méthodologique :</b> aucun correctif appliqué après lecture des résultats — chaque échec est documenté, pas patché.
-Corriger le système sur les questions du benchmark (n=16, sans jeu de validation) reviendrait à optimiser sur le jeu de test.
-<code>hors_couverture</code> est exclu des moyennes : RAGAS n'évalue pas correctement les refus (cf. leçon 2).</div>
+<div class="note"><b>Intégrité méthodologique :</b> le benchmark a été <b>étendu de 16 à 60 questions</b> (~10 par catégorie) pour la
+puissance statistique — <i>mêmes formes</i> de questions, références <b>vérifiées deux fois</b> sur l'Excel et les threads Reddit,
+<b>aucune</b> question reconstruite à partir des échecs observés. La recommandation « question verbatim au tool RAG » (reco #1) est
+<b>appliquée et mesurée</b> côté enrichi — c'est un correctif de principe, pas un patch par-question. Aucun autre correctif appliqué
+après lecture des résultats : chaque échec est <b>documenté, pas patché</b> (le benchmark n'a pas de jeu de validation).
+<code>hors_couverture</code> est exclu des moyennes (RAGAS n'évalue pas les refus — cf. leçon 2) ; <code>mixte</code> y est inclus
+mais reste <i>généreux envers l'enrichi</i> par construction (la baseline ne peut pas répondre à la moitié chiffrée — cf. § Limites).</div>
 
 <h2><span class="num">1.</span>Scores globaux (hors <code>hors_couverture</code>)</h2>
 <div class="kpis">
   <div class="kpi">
     <div class="name">Faithfulness</div>
-    <div class="vals"><span class="b">0.387</span><span class="e">0.821</span><span class="delta up">+0.434</span></div>
+    <div class="vals"><span class="b">0.355</span><span class="e">0.850</span><span class="delta up">+0.495</span></div>
     <div class="bars">
-      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:39%"></div></div></div>
-      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:82%"></div></div></div>
+      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:36%"></div></div></div>
+      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:85%"></div></div></div>
     </div>
   </div>
   <div class="kpi">
     <div class="name">Answer relevancy</div>
-    <div class="vals"><span class="b">0.821</span><span class="e">0.784</span><span class="delta down">−0.037</span></div>
+    <div class="vals"><span class="b">0.759</span><span class="e">0.876</span><span class="delta up">+0.117</span></div>
     <div class="bars">
-      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:82%"></div></div></div>
-      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:78%"></div></div></div>
+      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:76%"></div></div></div>
+      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:88%"></div></div></div>
     </div>
   </div>
   <div class="kpi">
     <div class="name">Context precision</div>
-    <div class="vals"><span class="b">0.137</span><span class="e">0.643</span><span class="delta up">+0.506</span></div>
+    <div class="vals"><span class="b">0.166</span><span class="e">0.632</span><span class="delta up">+0.466</span></div>
     <div class="bars">
-      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:14%"></div></div></div>
-      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:64%"></div></div></div>
+      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:17%"></div></div></div>
+      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:63%"></div></div></div>
     </div>
   </div>
   <div class="kpi">
     <div class="name">Context recall</div>
-    <div class="vals"><span class="b">0.286</span><span class="e">0.619</span><span class="delta up">+0.333</span></div>
+    <div class="vals"><span class="b">0.260</span><span class="e">0.717</span><span class="delta up">+0.457</span></div>
     <div class="bars">
-      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:29%"></div></div></div>
-      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:62%"></div></div></div>
+      <div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:26%"></div></div></div>
+      <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:72%"></div></div></div>
     </div>
   </div>
 </div>
-<p>Le <b>faithfulness double</b> (les réponses citent les sorties d'outils au lieu de broder) ; les métriques de
-contexte décollent de quasi-zéro. Le léger recul d'answer&nbsp;relevancy a deux causes identifiées et localisées
-(Q11 : refus correct puni par le juge ; Q4 : artefact de réponse) — voir le détail.</p>
+<p>Les quatre métriques progressent, trois <b>massivement</b> : le <b>faithfulness plus que double</b> (les réponses citent les
+sorties d'outils au lieu de broder), et les métriques de contexte décollent de quasi-zéro. Contrairement au run 16-questions,
+l'answer&nbsp;relevancy monte aussi (+0.117), portée par les réponses chiffrées courtes et ancrées. Le signal est net et robuste
+sur n = 50 questions dans l'agrégat.</p>
 
 <h2><span class="num">2.</span>Scores par catégorie</h2>
 <table>
   <tr><th>catégorie</th><th>faithfulness</th><th>answer_relevancy</th><th>context_precision</th><th>context_recall</th></tr>
-  <tr><td>simple_chiffre</td>
-      <td>0.283 <span class="arrow">→</span> <span class="gain">0.875</span></td>
-      <td>0.899 <span class="arrow">→</span> <span class="gain">0.941</span></td>
-      <td>0.000 <span class="arrow">→</span> <span class="gain">0.750</span></td>
-      <td>0.000 <span class="arrow">→</span> <span class="gain">0.750</span></td></tr>
-  <tr><td>complexe_chiffre</td>
-      <td>0.322 <span class="arrow">→</span> <span class="gain">1.000</span></td>
-      <td>0.665 <span class="arrow">→</span> <span class="flat">0.671</span></td>
-      <td>0.000 <span class="arrow">→</span> <span class="gain">0.750</span></td>
-      <td>0.000 <span class="arrow">→</span> <span class="gain">0.417</span></td></tr>
-  <tr><td>bruite</td>
-      <td>0.243 <span class="arrow">→</span> <span class="gain">0.833</span></td>
-      <td>0.859 <span class="arrow">→</span> <span class="flat">0.867</span></td>
-      <td>0.000 <span class="arrow">→</span> <span class="gain">0.500</span></td>
-      <td>0.000 <span class="arrow">→</span> <span class="gain">0.500</span></td></tr>
-  <tr><td>simple_texte</td>
-      <td>0.628 <span class="arrow">→</span> <span class="loss">0.583</span></td>
-      <td>0.882 <span class="arrow">→</span> <span class="loss">0.699</span></td>
-      <td>0.479 <span class="arrow">→</span> <span class="flat">0.500</span></td>
-      <td>1.000 <span class="arrow">→</span> <span class="loss">0.750</span></td></tr>
-  <tr><td><i>hors_couverture (hors agrégat)</i></td>
-      <td><i>0.091 → 0.833</i></td><td><i>0.450 → 0.923</i></td><td><i>0.500 → 0.000</i></td><td><i>0.000 → 0.500</i></td></tr>
+  <tr><td>simple_texte</td><td>0.570 <span class="arrow">→</span> <span class="gain">0.695</span></td><td>0.888 <span class="arrow">→</span> <span class="loss">0.808</span></td><td>0.428 <span class="arrow">→</span> <span class="loss">0.230</span></td><td>0.800 <span class="arrow">→</span> <span class="loss">0.600</span></td></tr>
+  <tr><td>simple_chiffre</td><td>0.334 <span class="arrow">→</span> <span class="gain">0.925</span></td><td>0.615 <span class="arrow">→</span> <span class="gain">0.903</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.700</span></td></tr>
+  <tr><td>complexe_chiffre</td><td>0.369 <span class="arrow">→</span> <span class="gain">0.900</span></td><td>0.769 <span class="arrow">→</span> <span class="gain">0.943</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.800</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.833</span></td></tr>
+  <tr><td>bruite</td><td>0.268 <span class="arrow">→</span> <span class="gain">0.867</span></td><td>0.687 <span class="arrow">→</span> <span class="gain">0.824</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.900</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.900</span></td></tr>
+  <tr><td>mixte</td><td>0.235 <span class="arrow">→</span> <span class="gain">0.863</span></td><td>0.837 <span class="arrow">→</span> <span class="gain">0.901</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.231</span></td><td>0.200 <span class="arrow">→</span> <span class="gain">0.550</span></td></tr>
+  <tr><td><i>hors_couverture (hors agrégat)</i></td><td>0.203 <span class="arrow">→</span> <span class="gain">0.515</span></td><td>0.738 <span class="arrow">→</span> <span class="gain">0.792</span></td><td>0.253 <span class="arrow">→</span> <span class="flat">0.250</span></td><td>0.200 <span class="arrow">→</span> <span class="gain">0.300</span></td></tr>
 </table>
-<p>Le delta est exactement là où le SQL devait le mettre : le <b>recall chiffré passe de 0.0 partout</b> à 0.75 / 0.42.
-La <b>régression <code>simple_texte</code></b> n'est pas du bruit : trois causes localisées (Q1 : reformulation,
-Q4 : retrieval + génération, artefacts d'adaptateur) — la branche RAG est inchangée, mais <i>ce qu'on lui donne à manger ne l'est plus</i>.</p>
+<p>Le delta est exactement là où le SQL devait le mettre : <b><code>simple_chiffre</code>, <code>complexe_chiffre</code> et
+<code>bruite</code> passent de ctx_precision ~0.1 à 0.8-1.0</b> et de faithfulness ~0.3 à ~0.9. La catégorie <code>mixte</code>
+progresse fort en faithfulness (0.24 → 0.86) mais sa ctx_precision reste basse (0.23) : sur une question composée, la moitié des
+contextes vient de l'autre outil, que RAGAS pénalise (§ Q mixte).</p>
+<p><b>La régression <code>simple_texte</code></b> (ctx_precision 0.43 → 0.23, recall 0.80 → 0.60) n'est pas du bruit : deux questions
+texte ont été <b>mal routées vers SQL</b> (<code>txt_reggie_miller</code>, <code>txt_reggie_allstar</code> → scores écroulés), et la
+branche RAG reçoit toujours des chunks OCR bruités. La branche RAG est inchangée, mais <i>le routing et l'ingestion, eux, décident
+de ce qu'elle voit</i>.</p>
+<p><b>Routing observé</b> (l'agent décide seul) : <code>simple_texte</code> 8 rag / <b>2 sql (erreurs)</b> · chiffré + bruité
+<b>30/30 sql</b> · <code>mixte</code> 9 both / 1 sql · <code>hors_couverture</code> <b>10/10 sql</b> (aucun refus — cf. § garde-fou).</p>
 
-<p><b>Routing :</b> 12 × sql, 4 × rag — zéro erreur de routing sur les questions couvertes. Les 2 <code>hors_couverture</code>
-(attendu : refus) sont parties en SQL : sonder la base serait acceptable, le problème est le <i>maquillage du résultat</i> (Q15, Q16).</p>
-
-<h2><span class="num">3.</span>Détail par question</h2>
+<h2><span class="num">3.</span>Détail par question (60)</h2>
 <table>
   <tr><th>#</th><th>id</th><th>outil</th><th>F</th><th>AR</th><th>CP</th><th>CR</th><th>verdict</th></tr>
-  <tr><td>1</td><td>txt_impressive_duo</td><td>rag</td><td>0.80 → <span class="loss">0.00</span></td><td>0.90 → 0.86</td><td>0.00 → 0.00</td><td>1.00 → <span class="loss">0.00</span></td><td><span class="badge ko">❌ régression</span></td></tr>
-  <tr><td>2</td><td>txt_reggie_miller</td><td>rag</td><td>0.46 → <span class="gain">1.00</span></td><td>0.85 → <span class="gain">1.00</span></td><td>1.00 → 1.00</td><td>1.00 → 1.00</td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>3</td><td>txt_nba_marketing</td><td>rag</td><td>1.00 → 1.00</td><td>0.93 → 0.94</td><td>0.92 → 1.00</td><td>1.00 → 1.00</td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>4</td><td>txt_homecourt_analogy</td><td>rag</td><td>0.25 → 0.33</td><td>0.85 → <span class="loss">0.00</span></td><td>0.00 → 0.00</td><td>1.00 → 1.00</td><td><span class="badge ko">❌ déjà KO avant</span></td></tr>
-  <tr><td>5</td><td>num_count_over_2000</td><td>sql</td><td>0.33 → <span class="gain">1.00</span></td><td>0.94 → 0.98</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>6</td><td>num_best_3pct</td><td>sql</td><td>0.00 → 0.50</td><td>0.90 → 0.95</td><td>0.00 → 0.00</td><td>0.00 → 0.00</td><td><span class="badge ko">❌</span></td></tr>
-  <tr><td>7</td><td>num_top_assists</td><td>sql</td><td>0.13 → <span class="gain">1.00</span></td><td>0.84 → 0.91</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>8</td><td>num_top_rebounds</td><td>sql</td><td>0.67 → <span class="gain">1.00</span></td><td>0.91 → 0.93</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>9</td><td>num_best_plusminus</td><td>sql</td><td>0.25 → <span class="gain">1.00</span></td><td>0.90 → 0.90</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>10</td><td>num_compare_okc_min</td><td>sql</td><td>0.32 → <span class="gain">1.00</span></td><td>0.79 → 0.84</td><td>0.00 → 0.00</td><td>0.00 → <span class="gain">0.67</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>11</td><td>num_team_total_rebounds</td><td>sql</td><td>0.10 → <span class="gain">1.00</span></td><td>0.97 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → 0.00</td><td><span class="badge meh">⚠️ refus propre</span></td></tr>
-  <tr><td>12</td><td>num_top10_points_sum</td><td>sql</td><td>0.63 → 1.00</td><td>0.00 → 0.95</td><td>0.00 → 1.00</td><td>0.00 → <span class="loss">0.00</span></td><td><span class="badge ko">❌ cas d'école</span></td></tr>
-  <tr><td>13</td><td>noisy_3pct</td><td>sql</td><td>0.09 → 0.67</td><td>0.87 → 0.88</td><td>0.00 → 0.00</td><td>0.00 → 0.00</td><td><span class="badge ko">❌</span></td></tr>
-  <tr><td>14</td><td>noisy_count</td><td>sql</td><td>0.40 → <span class="gain">1.00</span></td><td>0.85 → 0.85</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>15</td><td>oob_last5</td><td>sql*</td><td>0.18 → 0.67</td><td>0.00 → 0.95</td><td>1.00 → 0.00</td><td>0.00 → 1.00</td><td><span class="badge ko">❌ dangereux</span></td></tr>
-  <tr><td>16</td><td>oob_home_away</td><td>sql*</td><td>0.00 → 1.00</td><td>0.90 → 0.90</td><td>0.00 → 0.00</td><td>0.00 → 0.00</td><td><span class="badge ko">❌</span></td></tr>
+  <tr><td>1</td><td>txt_impressive_duo</td><td>rag</td><td>0.70 → <span class="flat">0.75</span></td><td>0.93 → <span class="flat">0.90</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge meh">⚠️</span></td></tr>
+  <tr><td>2</td><td>txt_reggie_miller*</td><td>sql</td><td>1.00 → <span class="loss">0.20</span></td><td>0.83 → <span class="loss">0.68</span></td><td>1.00 → <span class="loss">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="badge ko">❌ régression</span></td></tr>
+  <tr><td>3</td><td>txt_nba_marketing</td><td>rag</td><td>1.00 → <span class="flat">1.00</span></td><td>0.96 → <span class="flat">0.91</span></td><td>0.92 → <span class="flat">0.92</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge meh">⚠️</span></td></tr>
+  <tr><td>4</td><td>txt_homecourt_analogy</td><td>rag</td><td>0.19 → <span class="gain">0.67</span></td><td>0.90 → <span class="flat">0.89</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>5</td><td>txt_randle_revelation</td><td>rag</td><td>0.12 → <span class="gain">1.00</span></td><td>0.92 → <span class="gain">0.98</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>6</td><td>txt_cade_pick</td><td>rag</td><td>0.53 → <span class="loss">0.00</span></td><td>0.98 → <span class="flat">0.97</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge ko">❌ régression</span></td></tr>
+  <tr><td>7</td><td>txt_popularity_contest</td><td>rag</td><td>0.87 → <span class="loss">0.50</span></td><td>0.83 → <span class="flat">0.87</span></td><td>0.87 → <span class="flat">0.89</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ko">❌ régression</span></td></tr>
+  <tr><td>8</td><td>txt_finalists_snoozefest</td><td>rag</td><td>0.40 → <span class="gain">0.83</span></td><td>0.91 → <span class="flat">0.95</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>9</td><td>txt_reggie_allstar*</td><td>sql</td><td>0.62 → <span class="gain">1.00</span></td><td>0.86 → <span class="loss">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="badge ko">❌ régression</span></td></tr>
+  <tr><td>10</td><td>txt_1995_rockets</td><td>rag</td><td>0.26 → <span class="gain">1.00</span></td><td>0.76 → <span class="gain">0.93</span></td><td>0.50 → <span class="flat">0.50</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>11</td><td>num_best_3pct</td><td>sql</td><td>0.06 → <span class="gain">1.00</span></td><td>0.81 → <span class="gain">0.94</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>12</td><td>num_best_ftpct</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.95 → <span class="flat">0.95</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>13</td><td>num_top_points</td><td>sql</td><td>0.64 → <span class="gain">1.00</span></td><td>0.94 → <span class="flat">0.96</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge meh">⚠️</span></td></tr>
+  <tr><td>14</td><td>num_top_rebounds</td><td>sql</td><td>0.56 → <span class="gain">1.00</span></td><td>0.85 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>15</td><td>num_top_assists</td><td>sql</td><td>0.46 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.91</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>16</td><td>num_top_steals</td><td>sql</td><td>0.50 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>17</td><td>num_top_blocks</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>18</td><td>num_top_td3</td><td>sql</td><td>0.50 → <span class="flat">0.50</span></td><td>0.00 → <span class="gain">0.81</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>19</td><td>num_second_scorer</td><td>sql</td><td>0.62 → <span class="gain">0.75</span></td><td>0.82 → <span class="loss">0.72</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>20</td><td>num_third_rebounds</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.94 → <span class="flat">0.94</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>21</td><td>num_count_over_2000</td><td>sql</td><td>0.33 → <span class="gain">1.00</span></td><td>0.97 → <span class="flat">0.98</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>22</td><td>num_count_ast_500</td><td>sql</td><td>0.38 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>23</td><td>num_best_plusminus</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.73 → <span class="gain">0.91</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>24</td><td>num_compare_okc_min</td><td>sql</td><td>0.25 → <span class="gain">1.00</span></td><td>0.76 → <span class="gain">0.90</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.33</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>25</td><td>num_compare_den_bos</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.78 → <span class="gain">0.91</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>26</td><td>num_team_total_rebounds</td><td>sql</td><td>0.59 → <span class="gain">1.00</span></td><td>0.89 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>27</td><td>num_team_top_pts</td><td>sql</td><td>1.00 → <span class="flat">1.00</span></td><td>0.97 → <span class="flat">0.96</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>28</td><td>num_team_top_reb</td><td>sql</td><td>0.25 → <span class="gain">1.00</span></td><td>0.87 → <span class="gain">0.97</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>29</td><td>num_top10_points_sum</td><td>sql</td><td>0.22 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.90</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>30</td><td>num_sga_ppg</td><td>sql</td><td>0.67 → <span class="loss">0.00</span></td><td>0.88 → <span class="gain">0.99</span></td><td>1.00 → <span class="loss">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="badge ko">❌ régression</span></td></tr>
+  <tr><td>31</td><td>noisy_3pct</td><td>sql</td><td>0.29 → <span class="gain">0.67</span></td><td>0.84 → <span class="flat">0.88</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge meh">⚠️</span></td></tr>
+  <tr><td>32</td><td>noisy_count</td><td>sql</td><td>0.44 → <span class="gain">1.00</span></td><td>0.85 → <span class="flat">0.85</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>33</td><td>noisy_top_scorer</td><td>sql</td><td>0.44 → <span class="gain">1.00</span></td><td>0.79 → <span class="flat">0.82</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>34</td><td>noisy_rebounds</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.62 → <span class="gain">0.74</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>35</td><td>noisy_steals</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.86</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>36</td><td>noisy_blocks</td><td>sql</td><td>0.04 → <span class="gain">1.00</span></td><td>0.73 → <span class="gain">0.80</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>37</td><td>noisy_assists</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.72 → <span class="gain">0.85</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>38</td><td>noisy_3pm</td><td>sql</td><td>0.33 → <span class="gain">1.00</span></td><td>0.72 → <span class="flat">0.76</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>39</td><td>noisy_td3</td><td>sql</td><td>0.38 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">0.89</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>40</td><td>noisy_team_pts</td><td>sql</td><td>0.75 → <span class="gain">1.00</span></td><td>0.75 → <span class="flat">0.79</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>41</td><td>oob_last5</td><td>sql†</td><td>0.18 → <span class="loss">0.00</span></td><td>0.77 → <span class="gain">0.97</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge meh">hors agrégat</span></td></tr>
+  <tr><td>42</td><td>oob_home_away</td><td>sql†</td><td>0.00 → <span class="gain">0.40</span></td><td>0.85 → <span class="flat">0.90</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge meh">hors agrégat</span></td></tr>
+  <tr><td>43</td><td>oob_playoffs</td><td>sql†</td><td>0.58 → <span class="gain">1.00</span></td><td>0.88 → <span class="gain">0.95</span></td><td>0.33 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge meh">hors agrégat</span></td></tr>
+  <tr><td>44</td><td>oob_vs_opponent</td><td>sql†</td><td>0.40 → <span class="gain">0.75</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge meh">hors agrégat</span></td></tr>
+  <tr><td>45</td><td>oob_quarter</td><td>sql†</td><td>0.45 → <span class="gain">1.00</span></td><td>0.83 → <span class="flat">0.88</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge meh">hors agrégat</span></td></tr>
+  <tr><td>46</td><td>oob_clutch</td><td>sql†</td><td>0.21 → <span class="gain">0.50</span></td><td>0.76 → <span class="flat">0.76</span></td><td>0.20 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge meh">hors agrégat</span></td></tr>
+  <tr><td>47</td><td>oob_salary</td><td>sql†</td><td>0.00 → <span class="gain">0.50</span></td><td>0.88 → <span class="loss">0.72</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge meh">hors agrégat</span></td></tr>
+  <tr><td>48</td><td>oob_month</td><td>sql†</td><td>0.12 → <span class="loss">0.00</span></td><td>0.83 → <span class="gain">0.93</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="badge meh">hors agrégat</span></td></tr>
+  <tr><td>49</td><td>oob_height</td><td>sql†</td><td>0.00 → <span class="flat">0.00</span></td><td>0.71 → <span class="gain">0.96</span></td><td>1.00 → <span class="flat">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge meh">hors agrégat</span></td></tr>
+  <tr><td>50</td><td>oob_streak</td><td>sql†</td><td>0.08 → <span class="gain">1.00</span></td><td>0.86 → <span class="flat">0.84</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge meh">hors agrégat</span></td></tr>
+  <tr><td>51</td><td>mix_sga</td><td>both</td><td>0.80 → <span class="flat">0.83</span></td><td>0.84 → <span class="gain">0.95</span></td><td>1.00 → <span class="loss">0.67</span></td><td>0.50 → <span class="flat">0.50</span></td><td><span class="badge meh">⚠️</span></td></tr>
+  <tr><td>52</td><td>mix_cade</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.81 → <span class="gain">0.92</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>53</td><td>mix_haliburton</td><td>both</td><td>0.60 → <span class="gain">1.00</span></td><td>0.85 → <span class="gain">0.96</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.50 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>54</td><td>mix_edwards</td><td>both</td><td>0.30 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.84</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>55</td><td>mix_siakam</td><td>both</td><td>0.00 → <span class="gain">0.17</span></td><td>0.81 → <span class="gain">0.92</span></td><td>0.00 → <span class="gain">0.14</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>56</td><td>mix_trae</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.93</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>57</td><td>mix_lebron</td><td>both</td><td>0.00 → <span class="gain">0.83</span></td><td>0.84 → <span class="flat">0.82</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>58</td><td>mix_curry</td><td>both</td><td>0.08 → <span class="gain">0.80</span></td><td>0.78 → <span class="gain">0.93</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.50 → <span class="flat">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>59</td><td>mix_franz</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.83</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr><td>60</td><td>mix_randle</td><td>sql</td><td>0.57 → <span class="gain">1.00</span></td><td>0.92 → <span class="flat">0.92</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.50 → <span class="flat">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
 </table>
-<p style="font-size:.85rem;color:var(--muted)">* attendu : <code>none</code> (refus). F = faithfulness · AR = answer_relevancy · CP = context_precision · CR = context_recall.</p>
-<p><b>Bilan absolu enrichi : 7 ✅ · 1 ⚠️ · 6 ❌</b> (+2 hors agrégat). Le bilan <i>relatif</i> est le vrai résultat :
-la baseline n'avait <b>aucune</b> réponse chiffrée correcte (10 questions à recall 0.0) ; l'enrichi en réussit 7/10,
-chiffres exacts au point près.</p>
+<p style="font-size:.85rem;color:var(--muted)">* question texte <b>mal routée vers SQL</b> · † <code>hors_couverture</code> (attendu : refus) parti en SQL.
+F = faithfulness · AR = answer_relevancy · CP = context_precision · CR = context_recall.</p>
+<p><b>Lecture d'ensemble :</b> sur les 40 questions chiffré + bruité + mixte de l'agrégat, l'enrichi est quasi partout en vert — la
+baseline n'avait <b>aucune</b> réponse chiffrée correcte (recall 0.0 systématique). Les échecs se concentrent sur 4 fronts, détaillés
+ci-dessous : routing texte→SQL, dérivation « par match », retrieval mixte, et garde-fou hors-couverture.</p>
 
-<h2><span class="num">4.</span>Chaque déviation expliquée : le coupable et la raison</h2>
-
-<div class="qcard ko">
-  <h3>Q1 · txt_impressive_duo <span class="badge ko">❌ la régression la plus instructive</span></h3>
-  <div class="meta">« Quel duo de l'Orlando Magic les fans encensent-ils ? » · attendu rag · obtenu rag</div>
-  <div class="scores">F 0.80→0.00 · AR 0.90→0.86 · CP 0→0 · CR 1.00→0.00</div>
-  <p><b>Constat :</b> réponse <i>correcte</i> (Wagner + Banchero), mais la preuve est absente des contextes récupérés.</p>
-  <p><b>Coupable :</b> <span class="who refo">la reformulation de l'agent</span>. Vérifié dans Logfire : le tool RAG a reçu
-  <kbd class="sql">"duo Orlando Magic fans encensent"</kbd> — la question compressée en mots-clés. Rien de perdu sémantiquement,
-  mais l'embedding d'une liste de mots-clés ≠ celui d'une question : le retrieval devient plat
-  (scores FAISS 75.8 / 74.2 / 74.1 / 74.0 / 73.7 — aucun chunk ne se détache, 4/5 viennent du mauvais thread).</p>
-  <p><b>D'où vient la bonne réponse alors ?</b> Des <i>poids du modèle</i> — violation de « fonde ta réponse uniquement sur
-  les outils ». Le faithfulness 0.0 est un <b>vrai positif</b> : réponse juste <i>sans preuve</i> = même mécanisme que la
-  confabulation de Q15, le dé est juste tombé du bon côté.</p>
-  <p class="reco">💡 <b>Solution :</b> transmettre la question utilisateur <b>verbatim</b> au tool RAG (1 ligne dans la docstring du tool). <i>(reco #1)</i></p>
-</div>
+<h2><span class="num">4.</span>Cas instructifs : le coupable et la raison</h2>
 
 <div class="qcard ok">
-  <h3>Q2 · txt_reggie_miller <span class="badge ok">✅</span></h3>
-  <div class="meta">« Première option offensive la plus efficace des playoffs ? » · rag</div>
-  <div class="scores">F 0.46→1.00 · AR 0.85→1.00 · CP 1.00→1.00 · CR 1.00→1.00</div>
-  <p>La baseline « animait le débat » (réponse longue, brodée) ; l'agent répond court et ancré → faithfulness au plafond.</p>
-  <p><b>Artefact :</b> fragment <kbd class="sql">{"question": ...}</kbd> en fin de réponse — trace de l'adaptateur
-  <code>MistralCompatChatModel</code> (contenu Mistral chunké, aplati). Cette réponse <b>crashait avant l'adaptateur</b> ;
-  elle passe désormais avec un défaut cosmétique. Crash → artefact : bon échange.</p>
-</div>
-
-<div class="qcard ok">
-  <h3>Q3 · txt_nba_marketing <span class="badge ok">✅</span></h3>
-  <div class="meta">« Quel reproche les fans adressent-ils à la NBA… ? » · rag</div>
-  <div class="scores">F 1.00→1.00 · AR 0.93→0.94 · CP 0.92→1.00 · CR 1.00→1.00</div>
-  <p>Stable au plafond sur les deux systèmes — et c'est la question qui <b>plantait l'agent</b> avant l'adaptateur
-  OpenAI-compat : elle valide le correctif en conditions réelles.</p>
+  <h3>Le socle chiffré · num_top_rebounds &amp; consorts <span class="badge ok">✅ la démonstration du brief</span></h3>
+  <div class="meta">« Quel joueur a capté le plus de rebonds ? » · sql · réf. : Ivica Zubac 1008</div>
+  <div class="scores">F 0.56→1.00 · CP 0.00→1.00 · CR 0.00→1.00</div>
+  <p><kbd class="sql">SELECT p.name, p.reb FROM players p ORDER BY p.reb DESC LIMIT 1</kbd> → <b>Zubac 1008</b>, exact. C'est
+  <b>l'échec emblématique de la baseline</b> (le RAG texte répondait à côté sur les rebonds) : recall 0.0 → 1.0. Le même schéma se
+  répète sur toute la catégorie <code>simple_chiffre</code> (ctx_precision <b>1.000</b>) et <code>complexe_chiffre</code> — y compris
+  les nouveaux tops/ordinaux (2ᵉ marqueur, 3ᵉ rebondeur) et les agrégats d'équipe. La robustesse au bruit orthographique
+  (<code>bruite</code> : ctx_precision 0.90) est <b>gratuite</b> avec un LLM là où un parseur classique casserait.</p>
 </div>
 
 <div class="qcard ko">
-  <h3>Q4 · txt_homecourt_analogy <span class="badge ko">❌ déjà KO en baseline — et le recall 1.0 est un faux positif du juge</span></h3>
-  <div class="meta">« Quelle équipe de NHL a joué à l'extérieur avant la finale ? » · rag · réf. : les Oilers (3 tours à l'extérieur avant la finale)</div>
-  <div class="scores">F 0.25→0.33 · AR 0.85→0.00 · CP 0→0 · CR 1.00→1.00 (à tort)</div>
-  <p><b>Constat :</b> réponse <i>fausse</i> (« jamais arrivé ») — et, inspection des chunks à l'appui (traces), la
-  <b>vraie preuve n'est pas dans les contextes</b>. Le seul passage « Oilers » récupéré est un encart r/hockey disant
-  qu'ils <i>ont</i> l'avantage de la glace en finale — pas qu'ils ont joué les trois tours précédents à l'extérieur
-  (l'affirmation de la référence). Le chunk où le fan fait l'analogie n'a pas été remonté.</p>
-  <p><b>Coupables en cascade :</b>
-  ① <span class="who refo">le retrieval</span> — signature plate à nouveau (79.4 / 79.1 / 78.8 / 78.0 / 77.7, dont
-  2 chunks hors sujet) : le bon passage n'est pas remonté ;
-  ② <span class="who gen">la génération</span> — a répondu « jamais arrivé » en lisant le fil <b>NBA</b> voisin
-  (« Never happened… ») : confusion de périmètre NBA/NHL ;
-  ③ <span class="who judge">le juge</span> — <b>recall 1.0 à tort, sur les deux runs</b> : il a crédité la référence
-  sur la simple co-occurrence Oilers / finale / avantage, sans vérifier l'affirmation précise. Les métriques contexte
-  de <code>mistral-small</code> sont laxistes face au paraphrasé proche.</p>
-  <p><b>Leçon :</b> un score de métrique n'est pas une preuve — la localisation d'une panne exige la <b>lecture des
-  données brutes</b> : ce recall 1.0 aurait fait conclure, à tort, que le retrieval était sain.</p>
-  <p>Relevancy 0.00 probablement aggravée par l'artefact <kbd class="sql">{"question": ...}</kbd> (cf. Q2).</p>
-  <p class="reco">💡 <b>Solution :</b> deux leviers côté retrieval — <b>améliorer l'ingestion</b> (l'OCR des PDF scannés
-  produit des chunks très bruités qui dégradent les embeddings : nettoyage du texte OCR, re-chunking) et/ou
-  <b>élargir la recherche</b> (k &gt; 5, re-ranking) pour faire remonter le passage clé. Côté génération, un modèle plus
-  attentif au cadre (NBA vs NHL) aiderait. Le recall 1.0 fantôme, lui, relève du juge (§ Limites) — aucune retouche
-  du système ne le corrige.</p>
-</div>
-
-<div class="qcard ok">
-  <h3>Q5 · num_count_over_2000 <span class="badge ok">✅</span></h3>
-  <div class="meta">« Combien de joueurs &gt; 2000 points ? » · sql · réf. : 4</div>
-  <div class="scores">F 0.33→1.00 · AR 0.94→0.98 · CP 0→1.00 · CR 0→1.00</div>
-  <p><kbd class="sql">SELECT COUNT(*) FROM players WHERE pts &gt; 2000</kbd> → <b>4</b>, exact. Le cas nominal du text-to-SQL : quatuor parfait.</p>
+  <h3>Q2 · txt_reggie_miller <span class="badge ko">❌ la régression texte la plus nette (erreur de routing)</span></h3>
+  <div class="meta">« Première option offensive la plus efficace de l'histoire des playoffs ? » · attendu rag · <b>obtenu sql</b></div>
+  <div class="scores">F 1.00→0.20 · AR 0.83→0.68 · CP 1.00→0.00 · CR 1.00→0.00</div>
+  <p><b>Constat :</b> la baseline répondait <b>parfaitement</b> (Reggie Miller, via le RAG). L'agent enrichi a jugé la question
+  « chiffrée » et l'a envoyée au SQL : <kbd class="sql">SELECT p.name, p.ts_pct … ORDER BY p.ts_pct DESC LIMIT 1</kbd> →
+  <b>Alondes Williams, TS% 125.0</b> (un joueur à 1 match, valeur aberrante).</p>
+  <p><b>Coupable :</b> <span class="who refo">le routing de l'agent</span>. « Efficace / la plus efficace » a des allures de métrique
+  chiffrée ; le docstring du tool SQL a happé la question. Le modèle a même flairé l'anomalie (« semble anormalement élevé et
+  probablement incorrect ») — mais a quand même livré la réponse. <b>Faithful à un contexte faux</b> : F 0.20 parce que la synthèse
+  a nuancé, mais la preuve texte a totalement disparu (CP/CR 0).</p>
+  <p class="reco">💡 <b>Solution :</b> durcir la <b>frontière de routing</b> dans les docstrings/instructions — « efficacité, débat,
+  opinion, histoire » relèvent du RAG, pas du SQL ; réserver le SQL aux totaux/classements <i>de cette saison</i>. À valider sur de
+  nouvelles questions ambiguës.</p>
 </div>
 
 <div class="qcard ko">
-  <h3>Q6 · num_best_3pct <span class="badge ko">❌</span></h3>
-  <div class="meta">« Meilleur % à 3 points (minimum 200 tentatives) ? » · sql · réf. : LaVine 44.6 %</div>
-  <div class="scores">F 0.00→0.50 · AR 0.90→0.95 · CP 0→0 · CR 0→0</div>
-  <p><b>Constat :</b> le filtre est dans la question, la règle dans le prompt, le pattern dans le few-shot
-  (<kbd class="sql">fta &gt;= 300</kbd>)… et la requête générée n'a <b>pas de WHERE</b> → Alondes Williams, 100 % (volume infime).</p>
-  <p><b>Coupable :</b> <span class="who gen">la génération SQL</span> — <b>vérifié dans Logfire</b> : le tool a reçu
-  <kbd class="sql">"Quel joueur a le meilleur pourcentage à 3 points (minimum 200 tentatives) cette saison régulière NBA ?"</kbd> —
-  la reformulation est innocente (le filtre a survécu, la question a même été <i>enrichie</i> du cadre temporel).
-  C'est le générateur SQL qui a ignoré « minimum 200 tentatives » malgré la règle explicite du prompt et le few-shot
-  <kbd class="sql">fta &gt;= 300</kbd> qui montre exactement ce pattern : l'exemple ne suffit pas à garantir le transfert.
-  <i>Demi-point :</i> le modèle a flairé l'anomalie (« semble anormalement élevé ») — l'instinct était bon, la requête non.</p>
-  <p class="reco">💡 <b>Solution :</b> <b>modèle plus capable pour la génération SQL</b> — le few-shot existait déjà et
-  la consigne <i>explicite</i> a quand même été ignorée : c'est l'instruction-following du petit modèle qui plafonne, pas le prompt. <i>(reco #2)</i></p>
+  <h3>Q9 · txt_reggie_allstar <span class="badge ko">❌ même cause, autre symptôme</span></h3>
+  <div class="meta">« Combien de fois Reggie Miller a-t-il été All-Star ? » · attendu rag · <b>obtenu sql</b></div>
+  <div class="scores">F 0.62→1.00 · AR 0.86→0.00 · CP 1.00→0.00 · CR 1.00→0.00</div>
+  <p><b>Constat :</b> « Combien de fois » a déclenché le SQL : <kbd class="sql">SELECT COUNT(*) FROM players WHERE name = 'Reggie
+  Miller'</kbd> → <b>0</b> (Miller est retraité, absent de la base 2024-25). L'agent a alors honnêtement répondu « information non
+  disponible ». <b>Mais la réponse (5 fois) EST dans le corpus Reddit</b> — la baseline l'avait trouvée (CP/CR 1.0). Le refus est
+  correct <i>vu la table</i>, mais c'est le <b>mauvais outil</b> : le RAG aurait répondu.</p>
+  <p><b>La leçon :</b> le juge <b>punit le refus</b> (relevancy 0.00) alors que le faithfulness monte à 1.0 (fidèle au « 0 rows »).
+  Une question factuelle sur une personne peut être texte <i>ou</i> chiffrée — ici le mot « combien » a sur-déclenché le SQL.</p>
 </div>
 
-<div class="qcard ok">
-  <h3>Q7 / Q8 / Q9 · top passes · top rebonds · meilleur +/- <span class="badge ok">✅✅✅</span></h3>
-  <div class="meta">sql · réf. : Trae Young 882 · Ivica Zubac 1008 · SGA +12.1</div>
-  <div class="scores">CR 0.00→1.00 sur les trois · chiffres exacts au point près</div>
-  <p>Q8 est <b>l'échec emblématique de la baseline</b> (le RAG répondait à côté sur les rebonds) :
-  recall 0.0 → 1.0, c'est l'avant/après du brief en une ligne.</p>
-</div>
-
-<div class="qcard ok">
-  <h3>Q10 · num_compare_okc_min <span class="badge ok">✅ comportement émergent</span></h3>
-  <div class="meta">« Compare le meilleur marqueur d'OKC et celui de Minnesota » · sql</div>
-  <div class="scores">F 0.32→1.00 · AR 0.79→0.84 · CP 0→0 · CR 0→0.67</div>
-  <p>L'agent a <b>décomposé seul</b> la comparaison en <b>2 requêtes successives</b> (top OKC, puis top MIN) —
-  non programmé. Réponse exacte (SGA 2485 vs Edwards 2180). CP/CR partiels : le juge évalue chaque contexte isolément
-  contre la référence <i>globale</i> — chacun ne prouve que la moitié. Limite de lecture sur les réponses multi-requêtes.</p>
+<div class="qcard ko">
+  <h3>Q30 · num_sga_ppg <span class="badge ko">❌ le cas « dérivable » raté — l'ironie du run</span></h3>
+  <div class="meta">« Combien de points par match SGA marque-t-il en moyenne ? » · sql · réf. : ~32,7 (2485 / 76)</div>
+  <div class="scores">F 0.67→0.00 · CP 1.00→0.00 · CR 1.00→0.00</div>
+  <p>C'était notre <b>contre-exemple de la règle de granularité</b> : « par match » = total ÷ <code>gp</code>, donc <i>répondable</i>.
+  L'enrichi le rate spectaculairement. SQL généré : <kbd class="sql">SELECT p.min_per_game * p.pts / NULLIF(p.gp, 0)…</kbd> —
+  il <b>multiplie par les minutes</b> (34,2 × 2485 / 76 = <b>1118,25</b>), un non-sens dimensionnel. Puis
+  <span class="who synth">la synthèse</span> annonce « <b>25,4 points par match</b> » — un troisième chiffre, ni celui du SQL ni le bon.</p>
+  <p><b>Coupables en cascade :</b> <span class="who gen">génération SQL</span> (composition ratée : elle confond « points par match »
+  avec un produit de colonnes) <b>et</b> <span class="who synth">synthèse de l'agent</span> (qui invente 25,4 sans lien avec le
+  résultat 1118). Le petit modèle échoue sur la <b>dérivation arithmétique</b>, pas sur le lookup. Ironie : la baseline, elle,
+  répondait via le chunk Excel aplati (F 0.67, CR 1.0).</p>
+  <p class="reco">💡 <b>Solution :</b> few-shot explicite « moyenne par match = <code>pts * 1.0 / gp</code> » + modèle de génération SQL
+  plus capable sur la composition arithmétique. <i>(reco #2)</i></p>
 </div>
 
 <div class="qcard meh">
-  <h3>Q11 · num_team_total_rebounds <span class="badge meh">⚠️ refus propre, puni par le juge</span></h3>
-  <div class="meta">« Total des rebonds des joueurs d'Oklahoma City (OKC) ? » · sql · réf. : 3660</div>
-  <div class="scores">F 0.10→1.00 · AR 0.97→0.00 · CP 0→1.00 · CR 0→0</div>
-  <p><b>Coupable :</b> <span class="who gen">la génération SQL</span> — <kbd class="sql">WHERE t.name = 'Oklahoma City'</kbd>
-  alors que le nom exact est <code>Oklahoma City Thunder</code> → somme sur ensemble vide → NULL. Ironique : la question
-  fournissait le <b>code</b> <code>OKC</code> ; <kbd class="sql">team_code = 'OKC'</kbd> suffisait.</p>
-  <p><b>Le point clé :</b> l'agent a répondu « information non disponible » — <b>exactement le comportement demandé</b>
-  (ne pas inventer)… et le juge le sanctionne : <b>relevancy 0.00</b>. RAGAS punit les refus corrects. Sans cette ligne,
-  le −0.04 global d'answer_relevancy disparaît quasiment.</p>
-  <p class="reco">💡 <b>Solution :</b> <b>préférer <code>team_code</code></b> quand un code est fourni, et mapper vers les
-  valeurs exactes de <code>teams.name</code> sinon — l'utilisateur peut employer n'importe quel surnom (« OKC »,
-  « le Thunder », « Oklahoma »…), le prompt doit rendre ce mapping explicite. <i>(reco #3)</i></p>
+  <h3>Q54 · mix_edwards <span class="badge meh">⚠️ la difficulté propre au mixte : le retrieval de la moitié texte</span></h3>
+  <div class="meta">« Que disent les fans d'Anthony Edwards en playoffs, et combien de points cette saison ? » · both</div>
+  <div class="scores">F 0.30→1.00 · CP 0.00→0.00 · CR 0.00→0.50</div>
+  <p>L'agent a bien appelé <b>les deux outils</b> (routing <code>both</code> — le comportement visé). Moitié chiffrée parfaite
+  (<b>2180 points</b>). Mais la <b>moitié texte a échoué</b> : le tool RAG a remonté des chunks du thread « efficacité de Reggie
+  Miller » au lieu du thread « équipes impressionnantes », et l'agent a honnêtement conclu « les discussions ne mentionnent pas
+  directement Anthony Edwards ». D'où <b>ctx_precision 0</b> : la moitié SQL prouve le chiffre, mais aucun contexte ne prouve
+  l'opinion.</p>
+  <p><b>Pourquoi la ctx_precision <code>mixte</code> reste basse (0.23) partout :</b> RAGAS évalue chaque contexte isolément contre
+  une référence <b>composée</b> (texte + chiffre) ; au mieux la moitié des contextes matche. C'est une <b>limite de mesure</b> autant
+  qu'un vrai déficit de retrieval texte sur corpus OCR bruité.</p>
+  <p class="reco">💡 <b>Solution :</b> mêmes leviers que la reco retrieval (nettoyage OCR, k plus large, re-ranking) ; côté éval,
+  interpréter la ctx_precision <code>mixte</code> avec prudence.</p>
 </div>
 
 <div class="qcard ko">
-  <h3>Q12 · num_top10_points_sum <span class="badge ko">❌ le cas d'école du run</span></h3>
-  <div class="meta">« Somme des points des 10 meilleurs marqueurs ? » · sql · réf. : 19 931</div>
-  <div class="scores">F 0.63→<b>1.00</b> · AR 0.00→0.95 · CP 0→1.00 · CR 0→<b>0.00</b></div>
-  <p><b>Le film :</b> 1ʳᵉ requête <kbd class="sql">SUM(pts) … ORDER BY pts LIMIT 10</kbd> → <b>rejetée par PostgreSQL</b>
-  (GroupingError : on ne trie pas ce qui est agrégé en une ligne). La boucle Pydantic AI renvoie l'erreur au modèle, qui
-  <b>réessaie seul</b> : <kbd class="sql">SUM(p.pts) OVER ()</kbd> — window function <i>syntaxiquement valide</i>…
-  qui somme les <b>569 joueurs</b> (280 015) au lieu des 10 meilleurs. Réponse auto-incohérente : « 280 015 points »
-  suivi de la liste des 10 joueurs dont la somme fait visiblement ~20 000.</p>
-  <p><b>Coupables en cascade :</b> <span class="who gen">la génération SQL</span> (le pattern « agrégat d'un top-N »
-  exige une sous-requête — absent des few-shots, composition à deux étages, faiblesse typique des petits modèles),
-  la boucle de retry, qui a retransformé l'échec <i>bruyant</i> en erreur <i>silencieuse</i>, <b>et</b>
-  <span class="who synth">la synthèse de l'agent</span>, qui a livré une réponse <b>auto-incohérente</b> —
-  280 015 annoncé juste au-dessus d'une liste de 10 joueurs qui somme visiblement ~20 000 — sans tiquer.</p>
-  <p><b>La leçon en or : faithfulness 1.0 sur une réponse fausse.</b> La réponse est parfaitement fidèle à un contexte
-  qui est lui-même faux — <i>faithfulness mesure l'ancrage, pas la vérité</i>. Seul context_recall (comparé à la référence) l'attrape.</p>
-  <p class="reco">💡 <b>Solution :</b> triple levier — few-shot <b>agrégat-sur-sous-requête</b>, <b>meilleur modèle de
-  génération SQL</b> (la composition est la marche des petits modèles), et <b>meilleur modèle d'agent</b> pour la
-  synthèse : un sanity check minimal (la somme annoncée vs la liste affichée juste en dessous) suffisait à repérer
-  la contradiction. <i>(reco #2)</i></p>
+  <h3>Q55 · mix_siakam <span class="badge ko">❌ le risque résiduel : l'Excel aplati fuit dans le RAG</span></h3>
+  <div class="meta">« Pourquoi Siakam est-il jugé sous-coté, et combien de points ? » · both · réf. : impact + 1576 pts</div>
+  <div class="scores">F 0.00→0.17 · CP 0.00→0.14 · CR 0.00→0.50</div>
+  <p>Chiffre correct (<b>1576</b>), mais le tool RAG a remonté un <b>chunk de l'Excel aplati</b> :
+  <kbd class="sql">« Analyse du top 15 des joueurs en nombre de points … NaN NaN NaN »</kbd>. L'agent a alors <b>brodé</b> des raisons
+  (« PIE, +/- sous-estimés… ») non ancrées dans un vrai commentaire de fan → faithfulness 0.17.</p>
+  <p><b>Coupable :</b> le <b>risque documenté au plan</b> devenu réel — l'index FAISS contient <b>encore les 202 chunks d'Excel
+  aplati</b> ; sur une question mixte mal ancrée, le retrieval texte retombe dessus. L'enrichi les <i>court-circuite</i> d'habitude
+  par le routing chiffré→SQL, mais la <b>moitié texte d'un mixte</b> réexpose l'index complet.</p>
+  <p class="reco">💡 <b>Solution :</b> <b>ré-indexer <code>data/pdf</code> seul</b> (retirer l'Excel aplati de l'index texte) — le
+  chiffré passe par SQL de toute façon. <i>(reco #6, nouvelle)</i></p>
 </div>
 
 <div class="qcard ko">
-  <h3>Q13 · noisy_3pct <span class="badge ko">❌</span></h3>
-  <div class="meta">« kel joueur a le meilleur pourcentage a 3pts?? » · sql · réf. : LaVine 44.6 %</div>
-  <div class="scores">F 0.09→0.67 · AR 0.87→0.88 · CP 0→0 · CR 0→0</div>
-  <p>Robuste au bruit orthographique (SQL syntaxiquement correct) mais sans filtre de volume → Alondes Williams 100 %.</p>
-  <p><b>Coupable partagé :</b> ici la question <i>ne mentionne pas</i> le filtre (contrairement à Q6) — la référence attend
-  un filtre <i>implicite</i> (bon sens basket). <span class="who gen">Génération SQL</span> sans heuristique de volume,
-  mais aussi <span class="who judge">conception de la référence</span> qui suppose une inférence non spécifiée.
-  Limite de conception d'éval autant que du système.</p>
-  <p class="reco">💡 <b>Solution :</b> <b>heuristique de volume minimal</b> sur les ratios (<code>*_pct</code>) dans le
-  prompt SQL quand la question n'en précise pas (ex. tentatives ≥ seuil ligue). <i>(reco #5)</i></p>
+  <h3>hors_couverture · le garde-fou absent <span class="badge ko">❌ 10/10 routées SQL, 0 refus fiable</span></h3>
+  <div class="meta">10 questions hors périmètre (attendu : refus) · toutes parties en SQL</div>
+  <div class="scores">faithfulness catégorie 0.20 → 0.52 · mais « faithful » ne veut pas dire « honnête »</div>
+  <p>Aucune n'est refusée d'emblée : l'agent génère une requête et <b>habille le résultat</b>. Un spectre de gravité :</p>
+  <p>• <b>Hallucination pure</b> — <code>oob_height</code> : requête sur les rebonds, puis <b>invente</b>
+  « <b>Ivica Zubac, 2,16 m (7 pieds 1 pouce)</b> » depuis les poids du modèle (la taille n'est pas dans la base).<br>
+  • <b>Confabulation par ré-étiquetage</b> — <code>oob_playoffs</code> : requête saison régulière Denver → « Jokić 2072 points
+  <b>en playoffs</b> » ; <code>oob_streak</code> : <kbd class="sql">MAX(wins)</kbd> (victoires de saison) présenté comme une
+  « <b>série de 64 victoires</b> » ; <code>oob_last5</code> / <code>oob_month</code> : totaux saison ré-étiquetés « 5 derniers
+  matchs » / « décembre ».<br>
+  • <b>Refus honnête (minoritaire)</b> — <code>oob_salary</code> (« pas accès aux salaires ») et <code>oob_vs_opponent</code> (« ne
+  permettent pas… uniquement contre les Lakers »).</p>
+  <p><b>Coupable : responsabilité de périmètre non assignée</b> (défaut de design confirmé sur 10 cas). Le générateur SQL n'a
+  <b>aucun droit de refus</b> — il doit produire quelque chose. <b>RAGAS est aveugle</b> : plusieurs de ces réponses fausses obtiennent
+  faithfulness 1.0 (fidèles à un contexte SQL lui-même hors-sujet) — validation magistrale de l'exclusion de
+  <code>hors_couverture</code> de l'agrégat.</p>
+  <p class="reco">💡 <b>Solution (reco prioritaire, désormais chiffrée sur 10 cas) :</b> garde-fou de périmètre <b>dans les
+  instructions de l'agent</b> — « règle de granularité + exception dérivable » (refuser détail par-match / sous-période /
+  domicile-extérieur / adversaire / donnée absente ; autoriser « par match » = total ÷ <code>gp</code>). À valider sur de nouvelles
+  questions des deux côtés de la frontière.</p>
 </div>
 
 <div class="qcard ok">
-  <h3>Q14 · noisy_count <span class="badge ok">✅</span></h3>
-  <div class="meta">« kombien de joueur on marké plus de 1.5k pts cet saison?? » · sql · réf. : 23</div>
-  <div class="scores">F 0.40→1.00 · AR 0.85→0.85 · CP 0→1.00 · CR 0→1.00</div>
-  <p><kbd class="sql">COUNT(*) … pts &gt; 1500</kbd> → <b>23</b>, exact. La robustesse orthographique est <i>gratuite</i>
-  avec un LLM (vs un parseur classique) — argument d'architecture.</p>
-</div>
-
-<div class="qcard ko">
-  <h3>Q15 · oob_last5 <span class="badge ko">❌ le mode d'échec le plus dangereux</span></h3>
-  <div class="meta">« Meilleur % à 3 pts sur les 5 derniers matchs ? » · attendu : refus (donnée inexistante) · obtenu : sql</div>
-  <div class="scores">F 0.18→0.67 · AR 0.00→0.95 · CP 1.00→0.00 · CR 0→1.00</div>
-  <p><b>Constat :</b> la base n'a aucun détail par match. Le modèle a généré une requête <i>saison</i>
-  (filtre <kbd class="sql">fg3a &gt;= 200</kbd> correct !) et présenté le résultat comme « sur les <b>5 derniers matchs</b> » —
-  donnée vraie, <b>étiquette fausse</b>, aplomb total. Du <b>maquillage de cadre</b> : ni refus, ni chiffre inventé —
-  une réinterprétation silencieuse de la question.</p>
-  <p><b>Coupable : une responsabilité de cohérence non assignée — défaut de design, pas d'un seul maillon.</b>
-  Le prompt SQL dit <i>« Génère UNE requête répondant à la question »</i> : <span class="who gen">le générateur</span>
-  n'a <b>aucun droit de refus</b>, il est structurellement obligé de produire quelque chose — ici il a silencieusement
-  abandonné « 5 derniers matchs ». Puis <span class="who synth">la synthèse</span> a rhabillé le résultat saison en
-  « 5 derniers matchs ». Dans l'architecture actuelle, <b>aucun étage n'est chargé de détecter qu'une question sort
-  du schéma</b> — même mécanisme qu'en Q16.</p>
-  <p><b>RAGAS est aveugle</b> (relevancy 0.95, recall 1.0 contre une référence qui dit… que la donnée n'existe pas) :
-  validation magistrale de l'exclusion de <code>hors_couverture</code> de l'agrégat.</p>
-  <p class="reco">💡 <b>Solution :</b> garde-fou de périmètre dans les <b>instructions de l'agent</b> — règle de
-  granularité (refuser toute question exigeant le détail de matchs précis : sous-période, date, domicile/extérieur,
-  adversaire) avec l'exception dérivable (« par match » = total ÷ <code>gp</code> : répondable).</p>
-</div>
-
-<div class="qcard ko">
-  <h3>Q16 · oob_home_away <span class="badge ko">❌</span></h3>
-  <div class="meta">« Compare les rebonds domicile / extérieur » · attendu : refus · obtenu : sql</div>
-  <div class="scores">F 0.00→1.00 · AR 0.90→0.90 · CP 0→0 · CR 0→0</div>
-  <p><b>Constat :</b> le modèle a <b>inventé une liste d'équipes « à domicile »</b> dans le SQL lui-même :
-  <kbd class="sql">CASE WHEN team_code IN ('BOS','GSW','LAL','LAC','PHX')…</kbd> — hallucination structurelle.</p>
-  <p><b>Coupable :</b> le même <b>défaut de design qu'en Q15</b> (responsabilité hors-couverture non assignée) —
-  <span class="who gen">le générateur SQL</span>, sans droit de refus, va cette fois jusqu'à <b>fabriquer</b> une
-  sémantique inexistante (la liste d'équipes « domicile » inventée). <span class="who synth">La synthèse</span> a,
-  elle, <i>signalé</i> l'incohérence (« valeurs inversées ou incomplètes… ») mais a quand même livré les chiffres.
-  <i>Demi-point</i> pour l'instinct de doute.</p>
-  <p class="reco">💡 <b>Solution :</b> même garde-fou qu'en Q15 — l'agent refuse <b>avant</b> d'appeler le tool :
-  le générateur n'est plus jamais exposé au hors-schéma, la fabrication disparaît. <i>(reco #4 ; accessoirement #2.)</i></p>
+  <h3>Q5 · txt_randle_revelation <span class="badge ok">✅ l'effet du verbatim (reco #1), et sa limite</span></h3>
+  <div class="meta">« Quel joueur des Timberwolves est décrit comme une révélation… ? » · rag · réf. : Julius Randle</div>
+  <div class="scores">F 0.12→1.00 · AR 0.92→0.98 · CP 0.00→0.00 · CR 0.00→0.00</div>
+  <p><b>Effet positif du verbatim :</b> la question part <b>mot pour mot</b> au tool RAG (reco #1 appliquée). L'agent répond
+  <b>Julius Randle</b> et cite le passage réel : <i>« Randle has been a revelation. His bully ball has worked perfectly… »</i> →
+  faithfulness 0.12 → <b>1.00</b>. Le verbatim a rétabli l'ancrage de génération.</p>
+  <p><b>Sa limite :</b> ctx_precision/recall restent à <b>0</b>. Le passage cité était bien dans l'un des 5 chunks, mais le juge ne
+  le crédite pas — les chunks OCR sont si <b>bruités</b> (fragments r/nba mêlés, pseudos, timestamps) que la métrique de contexte ne
+  reconnaît pas la correspondance. Le verbatim corrige la <b>reformulation</b>, pas la <b>qualité d'ingestion</b>.</p>
+  <p class="reco">💡 <b>Solution :</b> le levier restant est l'<b>ingestion</b> (nettoyage du texte OCR, re-chunking) — orthogonal au
+  verbatim. <i>(reco #7)</i></p>
 </div>
 
 <h2><span class="num">5.</span>Leçons transverses</h2>
-<div class="lesson"><b>1. Faithfulness ≠ justesse</b> (Q12) — la métrique mesure la fidélité de la réponse <i>au contexte</i>,
-pas la vérité du contexte. Une chaîne peut être « fidèle à un contexte faux ». D'où le faisceau des 4 métriques + références vérifiées.</div>
-<div class="lesson"><b>2. RAGAS punit les refus corrects</b> (Q11, Q15, Q16) — relevancy 0 quand le système dit honnêtement
-« indisponible », scores flatteurs quand il confabule avec aplomb. → <code>hors_couverture</code> hors agrégat + jugement
-qualitatif : décision de Phase 2 doublement validée.</div>
-<div class="lesson"><b>3. La reformulation de l'agent est un facteur de variance du retrieval</b> (Q1 — innocentée en Q6,
-vérifié dans les traces : le filtre avait survécu à la reformulation) — le retriever est figé, mais la requête qui y entre
-ne l'est plus. Tout maillon LLM intercalé déplace le comportement des maillons suivants.</div>
-<div class="lesson"><b>4. Échec bruyant &gt; échec silencieux</b> (Q12, et l'inverse en Q11) — PostgreSQL strict, validation
-Pydantic, rôle SELECT-only : tout ce qui refuse fort vaut mieux que tout ce qui devine. Le retry automatique peut
-<i>retransformer</i> un échec bruyant en erreur silencieuse.</div>
-<div class="lesson"><b>5. Le text-to-SQL échoue par composition, pas par syntaxe</b> (Q12, Q16) — requêtes plates fiables ;
-compositions (agrégat-sur-top-N) et demandes hors schéma produisent du SQL plausible et faux. La marche est sémantique.</div>
-<div class="lesson"><b>6. L'observabilité a rendu chaque diagnostic possible</b> — reformulations (args des tool calls),
-SQL généré, scores FAISS : chaque « coupable » de ce rapport a été identifié dans une trace Logfire, span par span.</div>
+<div class="lesson"><b>1. Faithfulness ≠ justesse</b> (Q30, hors_couverture) — la métrique mesure la fidélité de la réponse <i>au contexte</i>,
+pas la vérité du contexte. Une chaîne peut être « fidèle à un contexte faux » (Alondes Williams TS 125, oob confabulés). D'où le
+faisceau des 4 métriques + références vérifiées.</div>
+<div class="lesson"><b>2. RAGAS punit les refus corrects</b> (Q9, hors_couverture) — relevancy 0 quand le système dit honnêtement
+« indisponible », scores flatteurs quand il confabule avec aplomb. → <code>hors_couverture</code> hors agrégat + jugement qualitatif.</div>
+<div class="lesson"><b>3. Le routing est le nouveau point de fragilité</b> (Q2, Q9) — la branche RAG est figée, mais un mot (« efficace »,
+« combien ») peut sur-déclencher le SQL et détruire une réponse que la baseline réussissait. La qualité dépend désormais de la
+<b>frontière de routing</b> autant que des outils eux-mêmes.</div>
+<div class="lesson"><b>4. Le text-to-SQL échoue par composition, pas par syntaxe</b> (Q30) — lookups et agrégats simples fiables ;
+la <b>dérivation arithmétique</b> (points par match) et les compositions à deux étages produisent du SQL plausible et faux.</div>
+<div class="lesson"><b>5. L'index mixte reste un risque</b> (Q55) — l'Excel aplati vit encore dans FAISS ; le routing chiffré→SQL le
+court-circuite, mais la moitié texte d'une question mixte peut retomber dessus. Séparer les index est la parade propre.</div>
+<div class="lesson"><b>6. L'observabilité a rendu chaque diagnostic possible</b> — SQL généré, args des tool calls, routing : chaque
+« coupable » de ce rapport a été lu dans les predictions et les traces Logfire, span par span.</div>
 
 <h2><span class="num">6.</span>Recommandations actionnables</h2>
-<div class="note">À valider sur de <b>nouvelles</b> questions — jamais sur ce benchmark (n=16, pas de jeu de validation : retoucher
-le système sur ses propres questions d'éval reviendrait à optimiser le jeu de test).</div>
+<div class="note">À valider sur de <b>nouvelles</b> questions — jamais sur ce benchmark (pas de jeu de validation : retoucher le système
+sur ses propres questions d'éval reviendrait à optimiser le jeu de test).</div>
 <table>
-  <tr><th>#</th><th>Recommandation</th><th>Cible</th><th>Coût</th></tr>
-  <tr><td>1</td><td>Passer la question utilisateur <b>verbatim</b> au tool RAG (docstring : « pass the user's question unchanged »)</td><td>Q1</td><td>1 ligne</td></tr>
-  <tr><td>2</td><td><b>Montée en gamme des modèles</b> : few-shot agrégat-sur-sous-requête + <b>modèle plus capable pour la
-      génération SQL</b> (Q6/Q12/Q16 : instruction-following et composition) <b>et pour l'agent</b> (Q12 : une synthèse
-      capable de repérer une réponse auto-incohérente)</td><td>Q6, Q12, Q16</td><td>3 lignes / config</td></tr>
-  <tr><td>3</td><td>Prompt SQL : <b>préférer <code>team_code</code></b> quand un code est fourni ; sinon mapper vers les valeurs
-      exactes de <code>teams.name</code> (l'utilisateur peut employer n'importe quel surnom)</td><td>Q11</td><td>2 lignes</td></tr>
-  <tr><td>4</td><td>Hors-couverture : <b>garde-fou porté par l'agent seul</b> — formulation « règle de granularité +
-      exception dérivable » (pas de liste de mots-clés) ; générateur SQL inchangé ; <b>validation sur de nouvelles
-      questions des deux côtés de la frontière</b> (hors-couverture vraies ET dérivables pièges, ex. « points par
-      match ») ; risque résiduel documenté</td><td>Q15, Q16</td><td>~5 lignes</td></tr>
-  <tr><td>5</td><td>Heuristique de volume minimal sur les ratios (<code>*_pct</code>) quand la question n'en précise pas</td><td>Q13</td><td>prompt SQL</td></tr>
+  <tr><th>#</th><th>Recommandation</th><th>Cible</th><th>Statut</th></tr>
+  <tr><td>1</td><td>Question utilisateur <b>verbatim</b> au tool RAG</td><td>génération RAG</td><td><b>✅ appliqué &amp; mesuré</b> (Q5 : F 0.12→1.0)</td></tr>
+  <tr><td>2</td><td><b>Montée en gamme du modèle SQL</b> (composition arithmétique, dérivations) + few-shot « moyenne = pts/gp »</td><td>Q30, num chiffrés partiels</td><td>à faire</td></tr>
+  <tr><td>3</td><td>Durcir la <b>frontière de routing</b> : opinion/efficacité/histoire → RAG ; réserver le SQL aux stats <i>de la saison</i></td><td>Q2, Q9</td><td>à faire</td></tr>
+  <tr><td>4</td><td><b>Garde-fou hors-couverture porté par l'agent</b> — « règle de granularité + exception dérivable » (prioritaire : 10 confabulations mesurées)</td><td>hors_couverture</td><td>à faire</td></tr>
+  <tr><td>5</td><td>Prompt SQL : <b>préférer <code>team_code</code></b> et mapper les surnoms vers <code>teams.name</code></td><td>agrégats d'équipe</td><td>à faire</td></tr>
+  <tr><td>6</td><td><b>Ré-indexer <code>data/pdf</code> seul</b> (retirer l'Excel aplati de l'index texte)</td><td>Q55, mixte</td><td>à faire</td></tr>
+  <tr><td>7</td><td><b>Nettoyage de l'ingestion OCR</b> (texte bruité → chunks propres) pour relever ctx_precision/recall texte</td><td>simple_texte, mixte</td><td>à faire</td></tr>
 </table>
-<p style="font-size:.88rem;color:var(--muted)">La limite du juge (refus punis, recall laxiste — Q4, Q11, Q15) reste documentée
-en § Limites : c'est une limite d'<b>évaluation</b>, pas une action sur le système.</p>
 
 <h2><span class="num">7.</span>Limites du comparatif</h2>
 <ul>
-  <li><b>Juge <code>mistral-small-2506</code></b> (contrainte free tier) : scores indicatifs ; le <b>delta</b> est le signal,
-  pas les valeurs absolues. Exemple concret : le <b>recall 1.0 de Q4 est un faux positif</b> (référence créditée sur une
-  co-occurrence Oilers/finale/avantage, alors que l'affirmation précise est absente des chunks) — détecté uniquement
-  par lecture des contextes bruts.</li>
-  <li><b>Run unique, routing non déterministe</b> (température 0.1 ≠ 0) : le routing observé (12 sql / 4 rag) est cohérent mais pas garanti reproductible à l'identique.</li>
-  <li><b>n = 16</b> : les moyennes par catégorie reposent sur 2 à 4 questions — lire les lignes, pas seulement les agrégats.</li>
-  <li>Artefact <code>{"question": ...}</code> dans 2 réponses texte (adaptateur OpenAI-compat) : cosmétique mais pénalise probablement la relevancy de Q4.</li>
+  <li><b>Juge <code>mistral-small-2506</code></b> (contrainte free tier) : scores indicatifs ; le <b>delta</b> est le signal, pas les
+  valeurs absolues. Plusieurs réponses <code>hors_couverture</code> fausses obtiennent faithfulness 1.0.</li>
+  <li><b>Run unique, routing non déterministe</b> (température 0.1 ≠ 0) : le routing observé est cohérent mais pas garanti
+  reproductible — deux questions texte ont basculé en SQL sur ce run.</li>
+  <li><b>Catégorie <code>mixte</code> généreuse envers l'enrichi</b> par construction : la baseline ne peut pas répondre à la moitié
+  chiffrée (pas de SQL), donc son delta est structurellement gonflé. Incluse dans l'agrégat mais à lire avec ce biais en tête ; sa
+  ctx_precision basse (0.23) est en partie un artefact de mesure (référence composée).</li>
+  <li><b>Corpus texte OCR bruité</b> : les chunks issus des PDF scannés dégradent les métriques de contexte même quand la réponse est
+  correcte (Q5) — plafond d'ingestion, pas de génération.</li>
+  <li><b>n = 10 par catégorie</b> : bien plus robuste que les 2-4 du run précédent, mais lire les lignes autant que les agrégats.</li>
 </ul>
 
 <footer>
   Projet OC P10 · SportSee — Évaluation RAGAS d'un assistant NBA (RAG + SQL) ·
   Harness : <code>eval/evaluate_ragas.py</code> (flag <code>--system</code>) ·
-  Sources : <code>baseline_20260609_212658.json</code> · <code>enriched_20260610_162008.json</code> ·
-  Observabilité : Logfire (projet <code>kl-38/oc-p10</code>)
+  Sources : <code>baseline_20260701_131415.json</code> · <code>enriched_20260701_135319.json</code> ·
+  Observabilité : Logfire (projet <code>kl-38/oc-p10</code>) · Benchmark : 60 questions vérifiées deux fois
 </footer>
 
 </div>

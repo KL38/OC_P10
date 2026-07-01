@@ -89,6 +89,30 @@ def load_questions(limit: int | None = None) -> list[dict]:
     return questions[:limit] if limit else questions
 
 
+def _generate_one(system: str, request, *, agent, manager, sql_tool, settings,
+                  max_attempts: int = 5, base_wait: float = 4.0):
+    """Run one question through the system under test, retrying on a Mistral 429.
+
+    The generation loop hits the same free-tier rate limit as the scoring loop
+    (``_ascore``), so it needs the same resilience: a single 429 must not abort a
+    full 60-question run. Only rate-limit errors are retried; anything else
+    propagates. (``_is_rate_limit`` is defined below, resolved at call time.)
+    """
+    for attempt in range(1, max_attempts + 1):
+        try:
+            if system == "enriched":
+                return ask_agent(request, agent=agent, manager=manager,
+                                 sql_tool=sql_tool, settings=settings)
+            return answer_question(request, manager=manager, settings=settings)
+        except Exception as exc:  # noqa: BLE001
+            if attempt == max_attempts or not _is_rate_limit(exc):
+                raise
+            wait = base_wait * (2 ** (attempt - 1))  # 4, 8, 16, 32s
+            logger.warning("Generation rate-limited (%s), retry %d/%d in %.0fs",
+                           type(exc).__name__, attempt, max_attempts, wait)
+            time.sleep(wait)
+
+
 def generate_predictions(
     questions: list[dict], *, system: str, manager: VectorStoreManager,
     settings: Settings, throttle: float
@@ -103,6 +127,7 @@ def generate_predictions(
     the baseline) — routing is non-deterministic, so the report keeps it.
     """
     samples: list[dict] = []
+    agent = sql_tool = None
     if system == "enriched":
         # Built once and reused: the SqlTool reflects the schema at startup
         # and the agent is stateless across runs (no message history).
@@ -111,11 +136,9 @@ def generate_predictions(
     for i, q in enumerate(questions, start=1):
         logger.info("Generate %d/%d [%s] %s", i, len(questions), q["id"], q["question"])
         request = AskRequest(question=q["question"])
-        if system == "enriched":
-            answer = ask_agent(request, agent=agent, manager=manager,
+        # Retry on a Mistral 429 so one rate-limit spike doesn't abort the whole run.
+        answer = _generate_one(system, request, agent=agent, manager=manager,
                                sql_tool=sql_tool, settings=settings)
-        else:
-            answer = answer_question(request, manager=manager, settings=settings)
         samples.append({
             "id": q["id"],
             "category": q["category"],
@@ -316,7 +339,8 @@ def main() -> None:
                              "with max_tokens=4096 the faithfulness truncation NaN should be largely fixed.")
     parser.add_argument("--strictness", type=int, default=3,
                         help="answer_relevancy: questions generated per answer (3-5 ideal).")
-    parser.add_argument("--throttle", type=float, default=1.0, help="Seconds between generations.")
+    parser.add_argument("--throttle", type=float, default=2.5,
+                        help="Seconds between generations (free-tier friendly).")
     args = parser.parse_args()
 
     setup_observability()

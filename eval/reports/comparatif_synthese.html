@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synthèse RAGAS — baseline vs enrichi · SportSee P10</title>
+<style>
+  :root {
+    --bg: #f6f8fa; --card: #ffffff; --ink: #1f2430; --muted: #6a7280;
+    --line: #e3e7ee; --accent: #2563eb;
+    --good: #157f3d; --good-bg: #e7f6ec; --bad: #b3261e; --bad-bg: #fdebea;
+    --warn: #92600a; --warn-bg: #fdf3df;
+    --base-bar: #b8c2d4; --enr-bar: #2563eb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+         background: var(--bg); color: var(--ink); line-height: 1.5; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 30px 24px 50px; }
+  header.hero { background: linear-gradient(120deg, #1e293b, #1e3a8a 60%, #312e81);
+                color: #fff; border-radius: 14px; padding: 26px 32px; margin-bottom: 22px; }
+  header.hero h1 { margin: 0 0 6px; font-size: 1.55rem; }
+  header.hero p { margin: 3px 0; color: #cbd5f5; font-size: .92rem; }
+  header.hero code { background: rgba(255,255,255,.12); padding: 1px 7px; border-radius: 5px; color: #e2e8ff; }
+  .verdict { background: var(--good-bg); border: 1px solid #bfe6cd; color: #0f5c2c;
+             border-radius: 12px; padding: 14px 20px; font-size: 1.05rem; margin-bottom: 26px; }
+  .verdict b { color: var(--good); }
+  h2 { font-size: 1.15rem; margin: 30px 0 12px; padding-bottom: 5px; border-bottom: 2px solid var(--line); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 15px 18px; }
+  .kpi .name { font-size: .82rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+  .kpi .vals { display: flex; align-items: baseline; gap: 10px; margin: 6px 0 10px; }
+  .kpi .vals .b { color: var(--muted); font-size: 1rem; text-decoration: line-through 1.5px rgba(106,114,128,.45); }
+  .kpi .vals .e { font-size: 1.7rem; font-weight: 700; }
+  .delta { font-weight: 700; font-size: .9rem; padding: 2px 9px; border-radius: 999px; color: var(--good); background: var(--good-bg); }
+  .bars { margin-top: 6px; }
+  .bar { display: flex; align-items: center; gap: 8px; font-size: .74rem; color: var(--muted); margin-top: 4px; }
+  .bar .track { flex: 1; height: 8px; background: #eef1f6; border-radius: 5px; overflow: hidden; }
+  .bar .fill { height: 100%; border-radius: 5px; }
+  .bar.base .fill { background: var(--base-bar); }
+  .bar.enr .fill { background: var(--enr-bar); }
+  .bar .lbl { width: 58px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line);
+          border-radius: 10px; overflow: hidden; font-size: .92rem; }
+  th { background: #eef2f8; text-align: left; padding: 9px 12px; font-weight: 600; }
+  td { padding: 8px 12px; border-top: 1px solid var(--line); }
+  tr:nth-child(even) td { background: #fafbfd; }
+  .arrow { color: var(--muted); padding: 0 2px; }
+  .gain { color: var(--good); font-weight: 700; }
+  .loss { color: var(--bad); font-weight: 700; }
+  .flat { color: var(--muted); }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .fcard { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--line);
+           border-radius: 10px; padding: 14px 18px; }
+  .fcard.ok { border-left-color: #2da55d; } .fcard.meh { border-left-color: #e0a82e; } .fcard.ko { border-left-color: #d6453c; }
+  .fcard h3 { margin: 0 0 6px; font-size: 1rem; }
+  .fcard p { margin: 0; font-size: .9rem; color: #333b48; }
+  .tag { font-size: .72rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; }
+  .tag.ok { background: var(--good-bg); color: var(--good); } .tag.meh { background: var(--warn-bg); color: var(--warn); }
+  .tag.ko { background: var(--bad-bg); color: var(--bad); }
+  ol.recos { padding-left: 20px; } ol.recos li { margin: 7px 0; font-size: .93rem; }
+  .done { color: var(--good); font-weight: 700; }
+  footer { margin-top: 34px; color: var(--muted); font-size: .8rem; border-top: 1px solid var(--line); padding-top: 12px; }
+  @media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+  @media print { body { background:#fff } .wrap{ padding:0 } header.hero{ border-radius:0 } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>RAG baseline → système enrichi SQL — synthèse</h1>
+  <p>Assistant NBA SportSee · 60 questions (6 catégories) · juge <code>mistral-small-2506</code> · harness identique, seul <code>--system</code> change</p>
+  <p>Reco #1 (question <b>verbatim</b> au tool RAG) appliquée côté enrichi · <code>hors_couverture</code> hors moyennes</p>
+</header>
+
+<div class="verdict">
+  L'ajout du <b>tool SQL</b> transforme les réponses chiffrées : <b>faithfulness ×2,4</b> (0.36 → 0.85) et les métriques de
+  contexte passent de <b>quasi-zéro à ~0.65</b>. Le RAG texte comblait la preuve textuelle mais <b>zéro preuve chiffrée</b> — c'est
+  ce trou que le SQL comble.
+</div>
+
+<h2>Scores globaux (hors <code>hors_couverture</code>)</h2>
+<div class="kpis">
+  <div class="kpi"><div class="name">Faithfulness</div>
+    <div class="vals"><span class="b">0.355</span><span class="e">0.850</span><span class="delta">+0.50</span></div>
+    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:36%"></div></div></div>
+    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:85%"></div></div></div></div></div>
+  <div class="kpi"><div class="name">Answer relevancy</div>
+    <div class="vals"><span class="b">0.759</span><span class="e">0.876</span><span class="delta">+0.12</span></div>
+    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:76%"></div></div></div>
+    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:88%"></div></div></div></div></div>
+  <div class="kpi"><div class="name">Context precision</div>
+    <div class="vals"><span class="b">0.166</span><span class="e">0.632</span><span class="delta">+0.47</span></div>
+    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:17%"></div></div></div>
+    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:63%"></div></div></div></div></div>
+  <div class="kpi"><div class="name">Context recall</div>
+    <div class="vals"><span class="b">0.260</span><span class="e">0.717</span><span class="delta">+0.46</span></div>
+    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:26%"></div></div></div>
+    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:72%"></div></div></div></div></div>
+</div>
+
+<h2>Par catégorie (baseline → enrichi)</h2>
+<table>
+  <tr><th>catégorie</th><th>faithfulness</th><th>ctx_precision</th><th>ctx_recall</th></tr>
+  <tr><td>simple_chiffre</td><td>0.33 <span class="arrow">→</span> <span class="gain">0.93</span></td><td>0.10 <span class="arrow">→</span> <span class="gain">1.00</span></td><td>0.10 <span class="arrow">→</span> <span class="gain">0.70</span></td></tr>
+  <tr><td>complexe_chiffre</td><td>0.37 <span class="arrow">→</span> <span class="gain">0.90</span></td><td>0.10 <span class="arrow">→</span> <span class="gain">0.80</span></td><td>0.10 <span class="arrow">→</span> <span class="gain">0.83</span></td></tr>
+  <tr><td>bruite</td><td>0.27 <span class="arrow">→</span> <span class="gain">0.87</span></td><td>0.10 <span class="arrow">→</span> <span class="gain">0.90</span></td><td>0.10 <span class="arrow">→</span> <span class="gain">0.90</span></td></tr>
+  <tr><td>mixte</td><td>0.24 <span class="arrow">→</span> <span class="gain">0.86</span></td><td>0.10 <span class="arrow">→</span> <span class="flat">0.23</span></td><td>0.20 <span class="arrow">→</span> <span class="gain">0.55</span></td></tr>
+  <tr><td>simple_texte</td><td>0.57 <span class="arrow">→</span> <span class="gain">0.70</span></td><td>0.43 <span class="arrow">→</span> <span class="loss">0.23</span></td><td>0.80 <span class="arrow">→</span> <span class="loss">0.60</span></td></tr>
+  <tr><td><i>hors_couverture</i></td><td><i>0.20 → 0.52</i></td><td><i>0.25 → 0.25</i></td><td><i>0.20 → 0.30</i></td></tr>
+</table>
+<p style="font-size:.85rem;color:var(--muted)">Routing (l'agent décide) : chiffré + bruité <b>30/30 SQL</b> · mixte 9/10 les deux outils · texte 2/10 mal routées vers SQL · hors_couverture 10/10 SQL (aucun refus).</p>
+
+<h2>Ce qui marche, ce qui coince</h2>
+<div class="cards">
+  <div class="fcard ok"><h3>✅ Chiffré, bruité, agrégats <span class="tag ok">cœur du gain</span></h3>
+    <p>Lookups, classements, comptages, totaux d'équipe : chiffres exacts au point près. La robustesse aux fautes (« kel joueur… ») est gratuite avec le LLM. C'est la démonstration du brief.</p></div>
+  <div class="fcard ok"><h3>✅ Questions mixtes <span class="tag ok">texte + chiffre</span></h3>
+    <p>L'agent appelle spontanément les <b>deux outils</b> dans un même run (faithfulness 0.24 → 0.86). La ctx_precision reste basse : RAGAS pénalise une référence composée moitié texte / moitié chiffre.</p></div>
+  <div class="fcard meh"><h3>⚠️ Texte : le routing <span class="tag meh">régression localisée</span></h3>
+    <p>2 questions texte mal routées vers SQL (« efficace », « combien de fois ») → réponse détruite alors que la baseline réussissait. Le corpus OCR bruité plafonne aussi les métriques de contexte.</p></div>
+  <div class="fcard ko"><h3>❌ Hors-couverture : pas de refus <span class="tag ko">limite majeure</span></h3>
+    <p>Les 10 questions hors périmètre partent en SQL et sont <b>habillées</b> au lieu d'être refusées — jusqu'à inventer une taille (« Zubac 2,16 m »). Le garde-fou reste à implémenter.</p></div>
+</div>
+
+<h2>Recommandations</h2>
+<ol class="recos">
+  <li><b>Question verbatim au tool RAG</b> — <span class="done">✅ fait &amp; mesuré</span> (faithfulness texte rétabli).</li>
+  <li><b>Garde-fou hors-couverture porté par l'agent</b> (règle de granularité + exception « par match ») — <b>prioritaire</b>, 10 confabulations mesurées.</li>
+  <li><b>Frontière de routing durcie</b> : opinion / efficacité / histoire → RAG ; SQL réservé aux stats de la saison.</li>
+  <li><b>Modèle SQL plus capable + ré-indexer les PDF seuls</b> : dérivations arithmétiques (points/match) et sortie de l'Excel aplati de l'index texte.</li>
+</ol>
+
+<footer>
+  OC P10 · SportSee — Éval RAGAS (RAG + SQL) · 60 questions vérifiées · Détail complet : <code>comparatif_baseline_enriched.html</code> ·
+  Observabilité : Logfire <code>kl-38/oc-p10</code>
+</footer>
+
+</div>
+</body>
+</html>

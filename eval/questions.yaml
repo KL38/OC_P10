@@ -1,0 +1,461 @@
+# Evaluation questions for the RAGAS harness (baseline & enriched runs).
+#
+# 60 questions, 6 categories x 10 (statistical power over the previous 16).
+#
+# category : simple_texte | simple_chiffre | complexe_chiffre | bruite
+#            | hors_couverture | mixte
+# expected : rag  (texte/PDF)        | sql (Excel/chiffré)
+#            none (donnée absente)   | both (texte + chiffré dans un même run)
+# reference: ground truth used by RAGAS (context_recall / factual correctness).
+#
+# Category definitions (frontière défendable) :
+#   simple_chiffre   = valeur d'une ligne existante (filtre + tri : max, 2e, 3e, %+seuil).
+#   complexe_chiffre = agrégation multi-lignes (COUNT/SUM/GROUP BY), comparaison, ou dérivation.
+#   mixte            = exige RAG *et* SQL dans le même run (brief email 2, étape 3).
+#
+# Numeric references verified twice against data/regular+NBA.xlsx (sheet
+# "Données NBA", 569 players, season totals): initial pandas harvest + an
+# independent recompute (25/25 OK, zero discrepancy). Text references transcribed
+# faithfully from the OCR'd Reddit match threads (data/Match 1-4.pdf).
+
+questions:
+  # =====================================================================
+  # simple_texte : answerable from the PDF (Reddit) commentaries -> RAG
+  # =====================================================================
+  - id: txt_impressive_duo  # Match 1 thread
+    category: simple_texte
+    expected: rag
+    question: "Quel duo de l'Orlando Magic les fans encensent-ils ?"
+    reference: >-
+      Paolo Banchero et Franz Wagner, le duo d'ailiers du Orlando Magic, décrits comme
+      très prometteurs (« absolute dogs ») malgré un effectif qui manque de tireurs.
+
+  - id: txt_reggie_miller  # Match 3 thread
+    category: simple_texte
+    expected: rag
+    question: "Quel joueur est présenté comme la première option offensive la plus efficace de l'histoire des playoffs NBA ?"
+    reference: "Reggie Miller, présenté comme la première option (« first option ») la plus efficace de l'histoire des playoffs."
+
+  - id: txt_nba_marketing  # Match 2 thread
+    category: simple_texte
+    expected: rag
+    question: "Quel reproche les fans adressent-ils à la NBA concernant la promotion des playoffs ?"
+    reference: >-
+      Les fans reprochent à la NBA un mauvais marketing / une mauvaise communication :
+      l'affiche réunissant les deux meilleures équipes selon les stats avancées est
+      perçue et vendue comme inintéressante (« snoozefest »).
+
+  - id: txt_homecourt_analogy  # Match 4 thread
+    category: simple_texte
+    expected: rag
+    question: "Quelle équipe de NHL a joué à l'extérieur avant d'atteindre la finale, selon un fan ?"
+    reference: >-
+      Les Oilers d'Edmonton en NHL, qui ont atteint la finale en jouant les trois tours
+      précédents à l'extérieur (sans avantage du terrain) avant de recevoir en finale.
+
+  - id: txt_randle_revelation  # Match 1 thread
+    category: simple_texte
+    expected: rag
+    question: "Quel joueur des Timberwolves est décrit comme une « révélation » en playoffs pour son jeu physique de « bully ball » ?"
+    reference: >-
+      Julius Randle (Minnesota), décrit comme une révélation en playoffs pour son jeu
+      physique de « bully ball » et son adresse retrouvée à 3 points, au point de
+      contribuer à user LeBron James.
+
+  - id: txt_cade_pick  # Match 1 thread
+    category: simple_texte
+    expected: rag
+    question: "De quel joueur des Pistons dit-on qu'il justifie son statut de premier choix de la draft 2021, malgré trop de pertes de balle ?"
+    reference: >-
+      Cade Cunningham (Detroit), présenté comme justifiant son statut de premier choix
+      de la draft 2021 (« a bucket »), malgré un trop grand nombre de pertes de balle.
+
+  - id: txt_popularity_contest  # Match 2 thread
+    category: simple_texte
+    expected: rag
+    question: "Selon le commentaire le plus soutenu, à quoi beaucoup de fans NBA s'intéressent-ils davantage qu'au basket lui-même ?"
+    reference: >-
+      Au concours de popularité (« popularity contest ») et aux superstars : selon le
+      commentaire le plus upvoté, beaucoup de fans s'y intéressent plus qu'au basket.
+
+  - id: txt_finalists_snoozefest  # Match 2 thread
+    category: simple_texte
+    expected: rag
+    question: "Quelles deux équipes s'affrontent dans cette finale qualifiée de « snoozefest », et qu'ont-elles en commun ?"
+    reference: >-
+      Le Oklahoma City Thunder et les Indiana Pacers : deux franchises de petits marchés,
+      ce que les fans jugent peu vendeur médiatiquement.
+
+  - id: txt_reggie_allstar  # Match 3 thread
+    category: simple_texte
+    expected: rag
+    question: "Combien de fois Reggie Miller a-t-il été sélectionné All-Star, un chiffre qui surprend un commentateur ?"
+    reference: >-
+      Cinq fois : un commentateur s'étonne que Reggie Miller n'ait été All-Star que
+      5 fois, « moins que Kyle Lowry ou Joe Johnson ».
+
+  - id: txt_1995_rockets  # Match 4 thread
+    category: simple_texte
+    expected: rag
+    question: "Quelle équipe est citée comme le cas le plus célèbre d'un titre remporté sans aucun avantage du terrain ?"
+    reference: >-
+      Les Houston Rockets de 1995 (6e tête de série, bilan 47-35, tenants du titre),
+      cités comme le cas le plus célèbre d'un titre gagné sans jamais avoir l'avantage
+      du terrain.
+
+  # =====================================================================
+  # simple_chiffre : single-row lookups (filter + sort) -> SQL
+  # =====================================================================
+  - id: num_best_3pct
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a le meilleur pourcentage à 3 points (minimum 200 tentatives) ?"
+    reference: "Zach LaVine (SAC), avec 44,6 % à 3 points sur 533 tentatives."
+
+  - id: num_best_ftpct
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a le meilleur pourcentage aux lancers francs (minimum 100 tentatives) ?"
+    reference: "Stephen Curry (GSW), avec 93,3 % aux lancers francs sur 301 tentatives."
+
+  - id: num_top_points
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a marqué le plus de points lors de la saison régulière ?"
+    reference: "Shai Gilgeous-Alexander (OKC), avec 2485 points."
+
+  - id: num_top_rebounds
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a capté le plus de rebonds ?"
+    reference: "Ivica Zubac (LAC), avec 1008 rebonds."
+
+  - id: num_top_assists
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a distribué le plus de passes décisives ?"
+    reference: "Trae Young (ATL), avec 882 passes décisives."
+
+  - id: num_top_steals
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a réalisé le plus d'interceptions ?"
+    reference: "Dyson Daniels (ATL), avec 228 interceptions."
+
+  - id: num_top_blocks
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a réalisé le plus de contres ?"
+    reference: "Victor Wembanyama (SAS), avec 175 contres."
+
+  - id: num_top_td3
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a réalisé le plus de triple-doubles ?"
+    reference: "Nikola Jokić (DEN), avec 34 triple-doubles."
+
+  - id: num_second_scorer
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur est le 2e meilleur marqueur de la saison ?"
+    reference: "Anthony Edwards (MIN), 2e meilleur marqueur avec 2180 points (derrière Shai Gilgeous-Alexander)."
+
+  - id: num_third_rebounds
+    category: simple_chiffre
+    expected: sql
+    question: "Quel joueur a capté le 3e plus grand nombre de rebonds ?"
+    reference: "Karl-Anthony Towns (NYK), 3e au rebond avec 922 rebonds (derrière Zubac 1008 et Sabonis 973)."
+
+  # =====================================================================
+  # complexe_chiffre : aggregations / comparisons / derivations -> SQL
+  # =====================================================================
+  - id: num_count_over_2000
+    category: complexe_chiffre
+    expected: sql
+    question: "Combien de joueurs ont marqué plus de 2000 points lors de la saison régulière ?"
+    reference: "4 joueurs ont dépassé 2000 points."
+
+  - id: num_count_ast_500
+    category: complexe_chiffre
+    expected: sql
+    question: "Combien de joueurs ont distribué au moins 500 passes décisives ?"
+    reference: "10 joueurs ont distribué au moins 500 passes décisives."
+
+  - id: num_best_plusminus
+    category: complexe_chiffre
+    expected: sql
+    question: "Quel joueur affiche le meilleur différentiel (+/-) moyen ?"
+    reference: "Shai Gilgeous-Alexander (OKC), avec un +/- de +12,1."
+
+  - id: num_compare_okc_min
+    category: complexe_chiffre
+    expected: sql
+    question: "Compare le meilleur marqueur d'OKC et celui de Minnesota."
+    reference: >-
+      Le meilleur marqueur d'OKC est Shai Gilgeous-Alexander (2485 pts) ; celui de
+      Minnesota est Anthony Edwards (2180 pts). SGA marque davantage sur la saison.
+
+  - id: num_compare_den_bos
+    category: complexe_chiffre
+    expected: sql
+    question: "Compare le meilleur marqueur de Denver et celui de Boston."
+    reference: >-
+      Le meilleur marqueur de Denver est Nikola Jokić (2072 pts) ; celui de Boston est
+      Jayson Tatum (1930 pts). Jokić marque davantage sur la saison.
+
+  - id: num_team_total_rebounds
+    category: complexe_chiffre
+    expected: sql
+    question: "Quel est le nombre total de rebonds captés par l'ensemble des joueurs d'Oklahoma City (OKC) cette saison ?"
+    reference: "3660 rebonds au total (somme des rebonds des 18 joueurs d'OKC)."
+
+  - id: num_team_top_pts
+    category: complexe_chiffre
+    expected: sql
+    question: "Quelle équipe a marqué le plus grand nombre de points au total sur la saison ?"
+    reference: "Detroit (DET), avec 10292 points au total."
+
+  - id: num_team_top_reb
+    category: complexe_chiffre
+    expected: sql
+    question: "Quelle équipe a capté le plus grand nombre de rebonds au total sur la saison ?"
+    reference: "Houston (HOU), avec 4067 rebonds au total."
+
+  - id: num_top10_points_sum
+    category: complexe_chiffre
+    expected: sql
+    question: "Quelle est la somme des points marqués par les 10 meilleurs marqueurs de la ligue ?"
+    reference: "19931 points (somme des points des 10 meilleurs marqueurs de la saison)."
+
+  - id: num_sga_ppg
+    category: complexe_chiffre
+    expected: sql
+    question: "Combien de points par match Shai Gilgeous-Alexander marque-t-il en moyenne cette saison ?"
+    reference: "Environ 32,7 points par match (2485 points sur 76 matchs joués)."
+
+  # =====================================================================
+  # bruite : typos / SMS phrasing, same numeric intent -> SQL
+  # =====================================================================
+  - id: noisy_3pct
+    category: bruite
+    expected: sql
+    question: "kel joueur a le meilleur pourcentage a 3pts??"
+    reference: "Zach LaVine (SAC), avec 44,6 % à 3 points sur 533 tentatives."
+
+  - id: noisy_count
+    category: bruite
+    expected: sql
+    question: "kombien de joueur on marké plus de 1.5k pts cet saison??"
+    reference: "23 joueurs ont dépassé 1500 points."
+
+  - id: noisy_top_scorer
+    category: bruite
+    expected: sql
+    question: "cé ki le meilleur marqueur de la saison??"
+    reference: "Shai Gilgeous-Alexander (OKC), avec 2485 points."
+
+  - id: noisy_rebounds
+    category: bruite
+    expected: sql
+    question: "ki a pri le + de rebond cette anné?"
+    reference: "Ivica Zubac (LAC), avec 1008 rebonds."
+
+  - id: noisy_steals
+    category: bruite
+    expected: sql
+    question: "le joueur avec le plus d'interception??"
+    reference: "Dyson Daniels (ATL), avec 228 interceptions."
+
+  - id: noisy_blocks
+    category: bruite
+    expected: sql
+    question: "kel joueur bloque le + de tir"
+    reference: "Victor Wembanyama (SAS), avec 175 contres."
+
+  - id: noisy_assists
+    category: bruite
+    expected: sql
+    question: "meilleur passeur nba le plus d'assist"
+    reference: "Trae Young (ATL), avec 882 passes décisives."
+
+  - id: noisy_3pm
+    category: bruite
+    expected: sql
+    question: "ki a mis le plus de panier a 3 point"
+    reference: "Anthony Edwards (MIN), avec 324 paniers à 3 points réussis."
+
+  - id: noisy_td3
+    category: bruite
+    expected: sql
+    question: "combien de triple double a fai jokic?"
+    reference: "34 triple-doubles pour Nikola Jokić (DEN)."
+
+  - id: noisy_team_pts
+    category: bruite
+    expected: sql
+    question: "kel equipe a scoré le + de point au total"
+    reference: "Detroit (DET), avec 10292 points au total."
+
+  # =====================================================================
+  # hors_couverture : data absent from the source (honest limits) -> none
+  # =====================================================================
+  - id: oob_last5
+    category: hors_couverture
+    expected: none
+    question: "Quel joueur a le meilleur pourcentage à 3 points sur les 5 derniers matchs ?"
+    reference: >-
+      Donnée non disponible : la base est agrégée sur l'ensemble de la saison, sans
+      détail match par match.
+
+  - id: oob_home_away
+    category: hors_couverture
+    expected: none
+    question: "Compare les statistiques de rebonds de l'équipe à domicile et à l'extérieur."
+    reference: >-
+      Donnée non disponible : la base ne distingue pas les performances à domicile
+      et à l'extérieur.
+
+  - id: oob_playoffs
+    category: hors_couverture
+    expected: none
+    question: "Quel joueur a marqué le plus de points en playoffs cette saison ?"
+    reference: >-
+      Donnée non disponible : la base couvre uniquement la saison régulière, pas les
+      playoffs.
+
+  - id: oob_vs_opponent
+    category: hors_couverture
+    expected: none
+    question: "Combien de points Shai Gilgeous-Alexander a-t-il marqués contre les Lakers ?"
+    reference: >-
+      Donnée non disponible : la base ne détaille pas les statistiques par adversaire
+      ni par match.
+
+  - id: oob_quarter
+    category: hors_couverture
+    expected: none
+    question: "Quel joueur marque le plus de points au 4e quart-temps ?"
+    reference: >-
+      Donnée non disponible : la base ne détaille pas les statistiques par quart-temps.
+
+  - id: oob_clutch
+    category: hors_couverture
+    expected: none
+    question: "Quel est le meilleur joueur dans le money time (clutch) ?"
+    reference: >-
+      Donnée non disponible : la base ne comporte pas de statistiques de clutch /
+      money time.
+
+  - id: oob_salary
+    category: hors_couverture
+    expected: none
+    question: "Quel joueur a le salaire le plus élevé de la ligue ?"
+    reference: >-
+      Donnée non disponible : la base ne contient aucune information sur les salaires.
+
+  - id: oob_month
+    category: hors_couverture
+    expected: none
+    question: "Quel joueur a marqué le plus de points au mois de décembre ?"
+    reference: >-
+      Donnée non disponible : la base est agrégée sur la saison, sans détail par mois
+      ni par date.
+
+  - id: oob_height
+    category: hors_couverture
+    expected: none
+    question: "Quel est le joueur le plus grand de la ligue ?"
+    reference: >-
+      Donnée non disponible : la base ne contient pas la taille des joueurs (seul l'âge
+      est présent).
+
+  - id: oob_streak
+    category: hors_couverture
+    expected: none
+    question: "Quelle est la plus longue série de victoires d'une équipe cette saison ?"
+    reference: >-
+      Donnée non disponible : la base ne contient pas la séquence des matchs permettant
+      de calculer des séries de victoires.
+
+  # =====================================================================
+  # mixte : requires BOTH the RAG (texte) and SQL (chiffré) tools -> both
+  # =====================================================================
+  - id: mix_sga  # Match 2 thread + Excel
+    category: mixte
+    expected: both
+    question: "Que reprochent certains fans à Shai Gilgeous-Alexander, et combien de points a-t-il marqués cette saison ?"
+    reference: >-
+      Certains fans lui reprochent de provoquer les fautes et de simuler (« flopping »,
+      « foul-baiting ») ; côté statistiques, il a marqué 2485 points sur la saison.
+
+  - id: mix_cade  # Match 1 thread + Excel
+    category: mixte
+    expected: both
+    question: "Comment les fans jugent-ils Cade Cunningham, et combien de ballons a-t-il perdus cette saison ?"
+    reference: >-
+      Les fans le voient comme un excellent marqueur (« a bucket ») qui doit réduire ses
+      pertes de balle ; il en a effectivement perdu 308 sur la saison.
+
+  - id: mix_haliburton  # Match 2 thread + Excel
+    category: mixte
+    expected: both
+    question: "Comment les fans décrivent-ils le tempérament de Tyrese Haliburton, et combien de passes décisives a-t-il distribuées cette saison ?"
+    reference: >-
+      Les fans le décrivent comme un grand provocateur verbal (« shit talker ») au bon
+      caractère en dehors du terrain ; il a distribué 672 passes décisives sur la saison.
+
+  - id: mix_edwards  # Match 1 thread + Excel
+    category: mixte
+    expected: both
+    question: "Que disent les fans de la progression d'Anthony Edwards en playoffs, et combien de points a-t-il inscrits cette saison ?"
+    reference: >-
+      Les fans saluent un « saut » majeur (« a machine », « massive leap ») ; il a
+      inscrit 2180 points sur la saison.
+
+  - id: mix_siakam  # Match 1 thread + Excel
+    category: mixte
+    expected: both
+    question: "Pourquoi des fans jugent-ils Pascal Siakam sous-coté, et combien de points a-t-il marqués cette saison ?"
+    reference: >-
+      Un fan le juge « le plus sous-coté » pour son impact sur la victoire ; il a marqué
+      1576 points sur la saison.
+
+  - id: mix_trae  # Match 1 thread + Excel
+    category: mixte
+    expected: both
+    question: "Que dit un fan du niveau de jeu de Trae Young lors des playoffs, et combien de passes décisives a-t-il distribuées cette saison ?"
+    reference: >-
+      Un fan estime avoir vu « some of the best basketball » de sa carrière lors des
+      games 5 et 6 ; il a distribué 882 passes décisives sur la saison.
+
+  - id: mix_lebron  # Match 1 thread + Excel
+    category: mixte
+    expected: both
+    question: "À quoi un fan attribue-t-il la baisse de régime de LeBron James en playoffs, et quel âge a-t-il d'après les données ?"
+    reference: >-
+      Un fan l'attribue à la physicalité de Julius Randle qui l'a usé (« LeBron has run
+      out of gas ») ; d'après les données, LeBron James a 40 ans.
+
+  - id: mix_curry  # Match 2 thread + Excel
+    category: mixte
+    expected: both
+    question: "Que craignent certains fans pour l'avenir des Warriors, et combien de paniers à 3 points Stephen Curry a-t-il réussis cette saison ?"
+    reference: >-
+      Certains fans pensent que les Warriors perdront de leur importance une fois Curry
+      retraité ; sur la saison, Stephen Curry a réussi 308 paniers à 3 points.
+
+  - id: mix_franz  # Match 1 thread + Excel
+    category: mixte
+    expected: both
+    question: "Quel défaut les fans pointent-ils chez Franz Wagner, et quel est son pourcentage à 3 points cette saison ?"
+    reference: >-
+      Les fans pointent son adresse extérieure (« until franz fixes his shooting ») ;
+      de fait, il ne tire qu'à 29,5 % à 3 points sur la saison.
+
+  - id: mix_randle  # Match 1 thread + Excel
+    category: mixte
+    expected: both
+    question: "Un fan salue Julius Randle à 45 % à 3 points en playoffs alors qu'il serait à 33 % en carrière ; quel est son pourcentage à 3 points en saison régulière d'après la base ?"
+    reference: >-
+      En playoffs un fan le crédite de 45 % à 3 points (contre ~33 % en carrière) ; en
+      saison régulière, la base indique 34,4 % à 3 points pour Julius Randle.
