@@ -64,6 +64,13 @@
   footer { margin-top:44px; color:var(--muted); font-size:.82rem; border-top:1px solid var(--line); padding-top:14px; }
   @media (max-width:720px){ .answers{ grid-template-columns:1fr; } }
   @media print { body{ background:#fff } .wrap{ padding:0 } header.hero{ border-radius:0 } }
+  .viz { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin:16px 0; }
+  .viz .legend { display:flex; gap:20px; justify-content:center; font-size:.8rem; color:var(--muted); margin-bottom:8px; }
+  .viz .legend .sw { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+  .charts { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+  .chart-card { border:1px solid var(--line); border-radius:10px; padding:10px 14px; }
+  .chart-card .ct { font-size:.8rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px; }
+  @media (max-width:720px){ .charts{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -85,27 +92,106 @@ benchmark. <code>hors_couverture</code> est exclu des moyennes (RAGAS n'évalue 
 <h2><span class="num">1.</span>Scores globaux (hors <code>hors_couverture</code>)</h2>
 <div class="kpis">
   <div class="kpi"><div class="name">Faithfulness</div>
-    <div class="vals"><span class="b">0.355</span><span class="e">0.878</span><span class="delta">+0.523</span></div>
-    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:36%"></div></div></div>
-    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:88%"></div></div></div></div></div>
+    <div class="vals"><span class="b">0.355</span><span class="e">0.878</span><span class="delta">+0.523</span></div></div>
   <div class="kpi"><div class="name">Answer relevancy</div>
-    <div class="vals"><span class="b">0.759</span><span class="e">0.833</span><span class="delta">+0.074</span></div>
-    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:76%"></div></div></div>
-    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:83%"></div></div></div></div></div>
+    <div class="vals"><span class="b">0.759</span><span class="e">0.833</span><span class="delta">+0.074</span></div></div>
   <div class="kpi"><div class="name">Context precision</div>
-    <div class="vals"><span class="b">0.166</span><span class="e">0.712</span><span class="delta">+0.546</span></div>
-    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:17%"></div></div></div>
-    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:71%"></div></div></div></div></div>
+    <div class="vals"><span class="b">0.166</span><span class="e">0.712</span><span class="delta">+0.546</span></div></div>
   <div class="kpi"><div class="name">Context recall</div>
-    <div class="vals"><span class="b">0.260</span><span class="e">0.757</span><span class="delta">+0.497</span></div>
-    <div class="bars"><div class="bar base"><span class="lbl">baseline</span><div class="track"><div class="fill" style="width:26%"></div></div></div>
-    <div class="bar enr"><span class="lbl">enrichi</span><div class="track"><div class="fill" style="width:76%"></div></div></div></div></div>
+    <div class="vals"><span class="b">0.260</span><span class="e">0.757</span><span class="delta">+0.497</span></div></div>
 </div>
 <p>Trois métriques sur quatre bondissent : le <b>faithfulness ×2,5</b> (les réponses citent les sorties d'outils au lieu de broder), la
 <b>précision</b> et le <b>recall</b> de contexte décollent de quasi-zéro. L'answer&nbsp;relevancy progresse modestement — tirée vers le
 bas par les <b>refus honnêtes</b> sur les questions hors-couverture, que le juge pénalise (leçon 2).</p>
 
 <h2><span class="num">2.</span>Scores par catégorie</h2>
+<div class="viz">
+  <div class="legend"><span><span class="sw" style="background:#b8c2d4"></span>baseline</span><span><span class="sw" style="background:#2563eb"></span>enrichi (v2)</span></div>
+  <div class="charts">
+  <div class="chart-card"><div class="ct">Faithfulness</div><svg viewBox="0 0 380 300" width="100%" role="img" aria-label="Faithfulness par catégorie">
+<polygon points="190.0,130.0 207.3,140.0 207.3,160.0 190.0,170.0 172.7,160.0 172.7,140.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,110.0 224.6,130.0 224.6,170.0 190.0,190.0 155.4,170.0 155.4,130.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,90.0 242.0,120.0 242.0,180.0 190.0,210.0 138.0,180.0 138.0,120.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,70.0 259.3,110.0 259.3,190.0 190.0,230.0 120.7,190.0 120.7,110.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="190.0" y2="70.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="259.3" y2="110.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="259.3" y2="190.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="190.0" y2="230.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="120.7" y2="190.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="120.7" y2="110.0" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,104.4 213.1,136.6 215.6,164.8 190.0,171.4 173.7,159.4 175.9,141.9" fill="#b8c2d430" stroke="#b8c2d4" stroke-width="1.8"/>
+<polygon points="190.0,81.5 259.3,110.0 252.4,186.0 190.0,222.0 139.2,179.3 155.4,130.0" fill="#2563eb22" stroke="#2563eb" stroke-width="2"/>
+<text x="190.0" y="60.0" text-anchor="middle" font-size="9" fill="#6a7280">simple_texte</text>
+<text x="270.5" y="106.5" text-anchor="start" font-size="9" fill="#6a7280">simple_chiffre</text>
+<text x="270.5" y="199.5" text-anchor="start" font-size="9" fill="#6a7280">complexe_chiffre</text>
+<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">bruité</text>
+<text x="109.5" y="199.5" text-anchor="end" font-size="9" fill="#6a7280">mixte</text>
+<text x="109.5" y="106.5" text-anchor="end" font-size="9" fill="#6a7280">hors_couv.</text>
+</svg></div>
+  <div class="chart-card"><div class="ct">Answer relevancy</div><svg viewBox="0 0 380 300" width="100%" role="img" aria-label="Answer relevancy par catégorie">
+<polygon points="190.0,130.0 207.3,140.0 207.3,160.0 190.0,170.0 172.7,160.0 172.7,140.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,110.0 224.6,130.0 224.6,170.0 190.0,190.0 155.4,170.0 155.4,130.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,90.0 242.0,120.0 242.0,180.0 190.0,210.0 138.0,180.0 138.0,120.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,70.0 259.3,110.0 259.3,190.0 190.0,230.0 120.7,190.0 120.7,110.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="190.0" y2="70.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="259.3" y2="110.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="259.3" y2="190.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="190.0" y2="230.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="120.7" y2="190.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="120.7" y2="110.0" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,79.0 232.6,125.4 243.3,180.8 190.0,205.0 132.0,183.5 138.9,120.5" fill="#b8c2d430" stroke="#b8c2d4" stroke-width="1.8"/>
+<polygon points="190.0,86.2 254.0,113.0 247.7,183.3 190.0,215.0 134.8,181.9 151.5,127.8" fill="#2563eb22" stroke="#2563eb" stroke-width="2"/>
+<text x="190.0" y="60.0" text-anchor="middle" font-size="9" fill="#6a7280">simple_texte</text>
+<text x="270.5" y="106.5" text-anchor="start" font-size="9" fill="#6a7280">simple_chiffre</text>
+<text x="270.5" y="199.5" text-anchor="start" font-size="9" fill="#6a7280">complexe_chiffre</text>
+<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">bruité</text>
+<text x="109.5" y="199.5" text-anchor="end" font-size="9" fill="#6a7280">mixte</text>
+<text x="109.5" y="106.5" text-anchor="end" font-size="9" fill="#6a7280">hors_couv.</text>
+</svg></div>
+  <div class="chart-card"><div class="ct">Context precision</div><svg viewBox="0 0 380 300" width="100%" role="img" aria-label="Context precision par catégorie">
+<polygon points="190.0,130.0 207.3,140.0 207.3,160.0 190.0,170.0 172.7,160.0 172.7,140.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,110.0 224.6,130.0 224.6,170.0 190.0,190.0 155.4,170.0 155.4,130.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,90.0 242.0,120.0 242.0,180.0 190.0,210.0 138.0,180.0 138.0,120.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,70.0 259.3,110.0 259.3,190.0 190.0,230.0 120.7,190.0 120.7,110.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="190.0" y2="70.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="259.3" y2="110.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="259.3" y2="190.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="190.0" y2="230.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="120.7" y2="190.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="120.7" y2="110.0" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,115.8 196.9,146.0 196.9,154.0 190.0,158.0 183.1,154.0 172.5,139.9" fill="#b8c2d430" stroke="#b8c2d4" stroke-width="1.8"/>
+<polygon points="190.0,123.8 259.3,110.0 259.3,190.0 190.0,230.0 173.8,159.4 176.1,142.0" fill="#2563eb22" stroke="#2563eb" stroke-width="2"/>
+<text x="190.0" y="60.0" text-anchor="middle" font-size="9" fill="#6a7280">simple_texte</text>
+<text x="270.5" y="106.5" text-anchor="start" font-size="9" fill="#6a7280">simple_chiffre</text>
+<text x="270.5" y="199.5" text-anchor="start" font-size="9" fill="#6a7280">complexe_chiffre</text>
+<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">bruité</text>
+<text x="109.5" y="199.5" text-anchor="end" font-size="9" fill="#6a7280">mixte</text>
+<text x="109.5" y="106.5" text-anchor="end" font-size="9" fill="#6a7280">hors_couv.</text>
+</svg></div>
+  <div class="chart-card"><div class="ct">Context recall</div><svg viewBox="0 0 380 300" width="100%" role="img" aria-label="Context recall par catégorie">
+<polygon points="190.0,130.0 207.3,140.0 207.3,160.0 190.0,170.0 172.7,160.0 172.7,140.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,110.0 224.6,130.0 224.6,170.0 190.0,190.0 155.4,170.0 155.4,130.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,90.0 242.0,120.0 242.0,180.0 190.0,210.0 138.0,180.0 138.0,120.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,70.0 259.3,110.0 259.3,190.0 190.0,230.0 120.7,190.0 120.7,110.0" fill="none" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="190.0" y2="70.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="259.3" y2="110.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="259.3" y2="190.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="190.0" y2="230.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="120.7" y2="190.0" stroke="#e9edf3" stroke-width="1"/>
+<line x1="190" y1="150" x2="120.7" y2="110.0" stroke="#e9edf3" stroke-width="1"/>
+<polygon points="190.0,86.0 196.9,146.0 196.9,154.0 190.0,158.0 176.1,158.0 176.1,142.0" fill="#b8c2d430" stroke="#b8c2d4" stroke-width="1.8"/>
+<polygon points="190.0,94.0 238.5,122.0 240.8,179.3 190.0,230.0 145.0,176.0 183.1,146.0" fill="#2563eb22" stroke="#2563eb" stroke-width="2"/>
+<text x="190.0" y="60.0" text-anchor="middle" font-size="9" fill="#6a7280">simple_texte</text>
+<text x="270.5" y="106.5" text-anchor="start" font-size="9" fill="#6a7280">simple_chiffre</text>
+<text x="270.5" y="199.5" text-anchor="start" font-size="9" fill="#6a7280">complexe_chiffre</text>
+<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">bruité</text>
+<text x="109.5" y="199.5" text-anchor="end" font-size="9" fill="#6a7280">mixte</text>
+<text x="109.5" y="106.5" text-anchor="end" font-size="9" fill="#6a7280">hors_couv.</text>
+</svg></div>
+  </div>
+  <div style="font-size:.82rem;color:#6a7280;margin-top:6px;text-align:center">Un radar par métrique · chaque branche = une catégorie · le polygone bleu (enrichi) déborde le gris (baseline).</div>
+</div>
+<p class="detail-cap" style="font-size:.85rem;color:#6a7280;margin:14px 0 4px">Détail chiffré (baseline → enrichi) :</p>
 <table>
   <tr><th>catégorie</th><th>faithfulness</th><th>answer_relevancy</th><th>context_precision</th><th>context_recall</th></tr>
   <tr><td>simple_texte</td><td>0.570 <span class="arrow">→</span> <span class="gain">0.856</span></td><td>0.888 <span class="arrow">→</span> <span class="loss">0.798</span></td><td>0.428 <span class="arrow">→</span> <span class="loss">0.328</span></td><td>0.800 <span class="arrow">→</span> <span class="loss">0.700</span></td></tr>
