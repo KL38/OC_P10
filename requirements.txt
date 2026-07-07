@@ -197,7 +197,7 @@ langchain-community==0.3.31
     # via
     #   oc-p10
     #   ragas
-langchain-core==0.3.86
+langchain-core==1.3.3
     # via
     #   langchain
     #   langchain-community
