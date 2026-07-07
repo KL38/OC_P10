@@ -434,7 +434,7 @@ pydantic-core==2.46.4
     #   pydantic
 pydantic-graph==1.106.0
     # via pydantic-ai-slim
-pydantic-settings==2.14.1
+pydantic-settings==2.14.2
     # via
     #   langchain-community
     #   oc-p10
