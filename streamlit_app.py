@@ -40,8 +40,15 @@ _TOOL_LABELS = {
 
 @st.cache_resource
 def get_manager() -> VectorStoreManager:
-    """Load the vector store once per session (heavy: FAISS + chunks)."""
-    return VectorStoreManager()
+    """Load the vector store once per session (heavy: FAISS + chunks).
+
+    Pins the PDF-only index variant ("_pdf"): the app must run the reference
+    configuration (enriched_v2 — flattened Excel excluded from text retrieval,
+    numbers reachable only through SQL). The full-corpus default stays in
+    place for the baseline/enriched evaluation runs.
+    """
+    settings = get_settings().model_copy(update={"index_variant": "_pdf"})
+    return VectorStoreManager(settings=settings)
 
 
 @st.cache_resource
@@ -65,8 +72,8 @@ with st.sidebar:
 manager = get_manager()
 if manager.index is None:
     st.error(
-        "Index vectoriel introuvable. Construis-le d'abord :\n\n"
-        "`uv run python scripts/build_index.py`"
+        "Index vectoriel PDF-only introuvable. Construis-le d'abord :\n\n"
+        "`uv run python scripts/build_index.py --pdf-only`"
     )
     st.stop()
 

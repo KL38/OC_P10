@@ -109,7 +109,12 @@
   .defs-cap { font-size:.8rem; color:var(--muted); margin:6px 2px 0; }
   table, .qcard, .lesson, .viz { box-shadow:var(--shadow); }
   .qcard { border-radius:12px; }
-  tr:hover td { background:#f2f6fd; }
+  /* teinte de fond par famille de catégories (police inchangée) */
+  tr.cat-num td { background:#faf0d2; }   /* chiffré (simple, complexe, bruité) */
+  tr.cat-txt td { background:#ddebfa; }   /* texte */
+  tr.cat-mix td { background:#eadff7; }   /* mixte */
+  tr.cat-oob td { background:#e7e8ec; }   /* hors couverture — hors moyennes */
+  tr:hover td { background:#cfdff5; }
   /* overflow:hidden (coins arrondis) désactive position:sticky -> visible sur cette table */
   table.detail { overflow:visible; }
   table.detail th { position:sticky; top:46px; z-index:10; box-shadow:0 1px 0 var(--line); }
@@ -176,8 +181,10 @@ benchmark. <code>hors_couverture</code> est exclu des moyennes (RAGAS n'évalue 
 <p class="defs-cap">Scores de 0 à 1, attribués par le juge LLM. faithfulness et answer_relevancy s'évaluent sans référence ;
 context_precision et context_recall se mesurent contre la référence du benchmark.</p>
 <p>Trois métriques sur quatre bondissent : le <b>faithfulness ×2,5</b> (les réponses citent les sorties d'outils au lieu de broder), la
-<b>précision</b> et le <b>recall</b> de contexte décollent de quasi-zéro. L'answer&nbsp;relevancy progresse modestement — tirée vers le
-bas par les <b>refus honnêtes</b> sur les questions hors-couverture, que le juge pénalise (leçon 2).</p>
+<b>précision</b> et le <b>recall</b> de contexte décollent de quasi-zéro. L'answer&nbsp;relevancy progresse modestement, car la
+métrique ne vérifie pas la véracité : les hallucinations fluides de la baseline scoraient déjà bien (0.76 de départ,
+Siakam crédité des points de SGA : AR&nbsp;0.81) — peu de marge, et l'assistant y perd même les points de son honnêteté
+(refus mal routé : AR&nbsp;0.00).</p>
 
 <h2 id="categories"><span class="num">2.</span>Scores par catégorie</h2>
 <div class="viz">
@@ -199,7 +206,7 @@ bas par les <b>refus honnêtes</b> sur les questions hors-couverture, que le jug
 <text x="190.0" y="60.0" text-anchor="middle" font-size="9" fill="#6a7280">simple_texte</text>
 <text x="270.5" y="106.5" text-anchor="start" font-size="9" fill="#6a7280">simple_chiffre</text>
 <text x="270.5" y="199.5" text-anchor="start" font-size="9" fill="#6a7280">complexe_chiffre</text>
-<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">bruité</text>
+<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">chiffré bruité</text>
 <text x="109.5" y="199.5" text-anchor="end" font-size="9" fill="#6a7280">mixte</text>
 <text x="109.5" y="106.5" text-anchor="end" font-size="9" fill="#6a7280">hors_couv.</text>
 </svg></div>
@@ -219,7 +226,7 @@ bas par les <b>refus honnêtes</b> sur les questions hors-couverture, que le jug
 <text x="190.0" y="60.0" text-anchor="middle" font-size="9" fill="#6a7280">simple_texte</text>
 <text x="270.5" y="106.5" text-anchor="start" font-size="9" fill="#6a7280">simple_chiffre</text>
 <text x="270.5" y="199.5" text-anchor="start" font-size="9" fill="#6a7280">complexe_chiffre</text>
-<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">bruité</text>
+<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">chiffré bruité</text>
 <text x="109.5" y="199.5" text-anchor="end" font-size="9" fill="#6a7280">mixte</text>
 <text x="109.5" y="106.5" text-anchor="end" font-size="9" fill="#6a7280">hors_couv.</text>
 </svg></div>
@@ -239,7 +246,7 @@ bas par les <b>refus honnêtes</b> sur les questions hors-couverture, que le jug
 <text x="190.0" y="60.0" text-anchor="middle" font-size="9" fill="#6a7280">simple_texte</text>
 <text x="270.5" y="106.5" text-anchor="start" font-size="9" fill="#6a7280">simple_chiffre</text>
 <text x="270.5" y="199.5" text-anchor="start" font-size="9" fill="#6a7280">complexe_chiffre</text>
-<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">bruité</text>
+<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">chiffré bruité</text>
 <text x="109.5" y="199.5" text-anchor="end" font-size="9" fill="#6a7280">mixte</text>
 <text x="109.5" y="106.5" text-anchor="end" font-size="9" fill="#6a7280">hors_couv.</text>
 </svg></div>
@@ -259,7 +266,7 @@ bas par les <b>refus honnêtes</b> sur les questions hors-couverture, que le jug
 <text x="190.0" y="60.0" text-anchor="middle" font-size="9" fill="#6a7280">simple_texte</text>
 <text x="270.5" y="106.5" text-anchor="start" font-size="9" fill="#6a7280">simple_chiffre</text>
 <text x="270.5" y="199.5" text-anchor="start" font-size="9" fill="#6a7280">complexe_chiffre</text>
-<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">bruité</text>
+<text x="190.0" y="246.0" text-anchor="middle" font-size="9" fill="#6a7280">chiffré bruité</text>
 <text x="109.5" y="199.5" text-anchor="end" font-size="9" fill="#6a7280">mixte</text>
 <text x="109.5" y="106.5" text-anchor="end" font-size="9" fill="#6a7280">hors_couv.</text>
 </svg></div>
@@ -269,20 +276,20 @@ bas par les <b>refus honnêtes</b> sur les questions hors-couverture, que le jug
 <p class="detail-cap" style="font-size:.85rem;color:#6a7280;margin:14px 0 4px">Détail chiffré (baseline → enrichi) :</p>
 <table>
   <tr><th>catégorie</th><th>faithfulness</th><th>answer_relevancy</th><th>context_precision</th><th>context_recall</th></tr>
-  <tr><td>simple_texte</td><td>0.570 <span class="arrow">→</span> <span class="gain">0.856</span></td><td>0.888 <span class="arrow">→</span> <span class="loss">0.798</span></td><td>0.428 <span class="arrow">→</span> <span class="loss">0.328</span></td><td>0.800 <span class="arrow">→</span> <span class="loss">0.700</span></td></tr>
-  <tr><td>simple_chiffre</td><td>0.334 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.615 <span class="arrow">→</span> <span class="gain">0.924</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.700</span></td></tr>
-  <tr><td>complexe_chiffre</td><td>0.369 <span class="arrow">→</span> <span class="gain">0.900</span></td><td>0.769 <span class="arrow">→</span> <span class="gain">0.833</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.733</span></td></tr>
-  <tr><td>bruite</td><td>0.268 <span class="arrow">→</span> <span class="gain">0.900</span></td><td>0.687 <span class="arrow">→</span> <span class="gain">0.812</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td></tr>
-  <tr><td>mixte</td><td>0.235 <span class="arrow">→</span> <span class="gain">0.733</span></td><td>0.837 <span class="arrow">→</span> <span class="flat">0.797</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.234</span></td><td>0.200 <span class="arrow">→</span> <span class="gain">0.650</span></td></tr>
-  <tr><td><i>hors_couverture (hors agrégat)</i></td><td>0.203 <span class="arrow">→</span> <span class="gain">0.500</span></td><td>0.738 <span class="arrow">→</span> <span class="loss">0.556</span></td><td>0.253 <span class="arrow">→</span> <span class="loss">0.200</span></td><td>0.200 <span class="arrow">→</span> <span class="loss">0.100</span></td></tr>
+  <tr class="cat-txt"><td>simple_texte</td><td>0.570 <span class="arrow">→</span> <span class="gain">0.856</span></td><td>0.888 <span class="arrow">→</span> <span class="loss">0.798</span></td><td>0.428 <span class="arrow">→</span> <span class="loss">0.328</span></td><td>0.800 <span class="arrow">→</span> <span class="loss">0.700</span></td></tr>
+  <tr class="cat-num"><td>simple_chiffre</td><td>0.334 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.615 <span class="arrow">→</span> <span class="gain">0.924</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.700</span></td></tr>
+  <tr class="cat-num"><td>complexe_chiffre</td><td>0.369 <span class="arrow">→</span> <span class="gain">0.900</span></td><td>0.769 <span class="arrow">→</span> <span class="gain">0.833</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.733</span></td></tr>
+  <tr class="cat-num"><td>chiffré bruité</td><td>0.268 <span class="arrow">→</span> <span class="gain">0.900</span></td><td>0.687 <span class="arrow">→</span> <span class="gain">0.812</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">1.000</span></td></tr>
+  <tr class="cat-mix"><td>mixte</td><td>0.235 <span class="arrow">→</span> <span class="gain">0.733</span></td><td>0.837 <span class="arrow">→</span> <span class="flat">0.797</span></td><td>0.100 <span class="arrow">→</span> <span class="gain">0.234</span></td><td>0.200 <span class="arrow">→</span> <span class="gain">0.650</span></td></tr>
+  <tr class="cat-oob"><td><i>hors_couverture (hors agrégat)</i></td><td>0.203 <span class="arrow">→</span> <span class="gain">0.500</span></td><td>0.738 <span class="arrow">→</span> <span class="loss">0.556</span></td><td>0.253 <span class="arrow">→</span> <span class="loss">0.200</span></td><td>0.200 <span class="arrow">→</span> <span class="loss">0.100</span></td></tr>
 </table>
-<p>Les catégories chiffrées et bruitées sont <b>transformées</b> (ctx_precision 0.1 → 1.0). Le <code>mixte</code> progresse fort
+<p>Les catégories chiffrées — propres ou bruitées — sont <b>transformées</b> (ctx_precision 0.1 → 1.0). Le <code>mixte</code> progresse fort
 (faithfulness 0.24 → 0.73) ; sa ctx_precision reste basse car RAGAS pénalise une référence <b>composée</b> texte+chiffre. Le léger recul
 d'answer_relevancy en <code>simple_texte</code> et <code>hors_couverture</code> reflète des <b>refus</b> et le corpus OCR bruité, pas une
 perte de qualité de réponse.</p>
 <p style="margin-bottom:4px"><b>Routing</b> (l'assistant décide seul de l'outil) :</p>
 <ul style="margin-top:0">
-  <li>chiffré + bruité : <b>30/30 → SQL</b></li>
+  <li>chiffré, propre ou bruité : <b>30/30 → SQL</b></li>
   <li>mixte : <b>9/10 → les deux outils</b></li>
   <li>texte : <b>9/10 → RAG</b> (1 seule erreur de routing)</li>
   <li>hors périmètre : <b>10/10 → SQL</b> — reste le point faible (§ 4)</li>
@@ -301,69 +308,73 @@ perte de qualité de réponse.</p>
 <h2 id="detail"><span class="num">3.</span>Détail par question (60)</h2>
 <p style="font-size:.85rem;color:#67718a;margin:2px 0 8px">Scores baseline → enrichi ·
 <b>F</b> = faithfulness · <b>AR</b> = answer_relevancy · <b>CP</b> = context_precision · <b>CR</b> = context_recall
-(définitions en <a href="#scores" style="color:inherit">§1</a>).</p>
+(définitions en <a href="#scores" style="color:inherit">§1</a>).<br>
+Fond : <span style="background:#faf0d2;padding:1px 9px;border-radius:4px">chiffré</span>
+<span style="background:#ddebfa;padding:1px 9px;border-radius:4px">texte</span>
+<span style="background:#eadff7;padding:1px 9px;border-radius:4px">mixte</span>
+<span style="background:#e7e8ec;padding:1px 9px;border-radius:4px">hors couverture</span></p>
 <table class="detail">
   <tr><th>#</th><th>id</th><th>outil</th><th>F</th><th>AR</th><th>CP</th><th>CR</th><th>verdict</th></tr>
-  <tr><td>1</td><td>txt_impressive_duo</td><td>rag</td><td>0.70 → <span class="gain">1.00</span></td><td>0.93 → <span class="loss">0.84</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="vnote">juste, CP 0 (OCR)</span></td></tr>
-  <tr><td>2</td><td>txt_reggie_miller</td><td>rag</td><td>1.00 → <span class="flat">1.00</span></td><td>0.83 → <span class="flat">0.86</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
-  <tr><td>3</td><td>txt_nba_marketing</td><td>rag</td><td>1.00 → <span class="flat">1.00</span></td><td>0.96 → <span class="flat">0.91</span></td><td>0.92 → <span class="flat">0.92</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
-  <tr><td>4</td><td>txt_homecourt_analogy</td><td>rag</td><td>0.19 → <span class="gain">0.67</span></td><td>0.90 → <span class="flat">0.94</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>5</td><td>txt_randle_revelation</td><td>rag</td><td>0.12 → <span class="gain">1.00</span></td><td>0.92 → <span class="loss">0.72</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="vnote">juste, CR 0 (OCR)</span></td></tr>
-  <tr><td>6</td><td>txt_cade_pick</td><td>rag</td><td>0.53 → <span class="loss">0.00</span></td><td>0.98 → <span class="flat">0.97</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="vnote">juste, F 0 (OCR)</span></td></tr>
-  <tr><td>7</td><td>txt_popularity_contest</td><td>rag</td><td>0.87 → <span class="gain">1.00</span></td><td>0.83 → <span class="flat">0.86</span></td><td>0.87 → <span class="flat">0.87</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
-  <tr><td>8</td><td>txt_finalists_snoozefest</td><td>rag</td><td>0.40 → <span class="gain">0.89</span></td><td>0.91 → <span class="flat">0.95</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>9</td><td>txt_reggie_allstar*</td><td>sql</td><td>0.62 → <span class="gain">1.00</span></td><td>0.86 → <span class="loss">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="loss">mal routé SQL</span></td></tr>
-  <tr><td>10</td><td>txt_1995_rockets</td><td>rag</td><td>0.26 → <span class="gain">1.00</span></td><td>0.76 → <span class="gain">0.93</span></td><td>0.50 → <span class="flat">0.50</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>11</td><td>num_best_3pct</td><td>sql</td><td>0.06 → <span class="gain">1.00</span></td><td>0.81 → <span class="gain">0.97</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>12</td><td>num_best_ftpct</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.95 → <span class="flat">0.97</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>13</td><td>num_top_points</td><td>sql</td><td>0.64 → <span class="gain">1.00</span></td><td>0.94 → <span class="flat">0.95</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
-  <tr><td>14</td><td>num_top_rebounds</td><td>sql</td><td>0.56 → <span class="gain">1.00</span></td><td>0.85 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>15</td><td>num_top_assists</td><td>sql</td><td>0.46 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>16</td><td>num_top_steals</td><td>sql</td><td>0.50 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>17</td><td>num_top_blocks</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.92</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>18</td><td>num_top_td3</td><td>sql</td><td>0.50 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.94</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>19</td><td>num_second_scorer</td><td>sql</td><td>0.62 → <span class="gain">1.00</span></td><td>0.82 → <span class="loss">0.77</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>20</td><td>num_third_rebounds</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.94 → <span class="flat">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>21</td><td>num_count_over_2000</td><td>sql</td><td>0.33 → <span class="gain">1.00</span></td><td>0.97 → <span class="flat">0.98</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>22</td><td>num_count_ast_500</td><td>sql</td><td>0.38 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>23</td><td>num_best_plusminus</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.73 → <span class="gain">0.94</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>24</td><td>num_compare_okc_min</td><td>sql</td><td>0.25 → <span class="gain">1.00</span></td><td>0.76 → <span class="gain">0.81</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.67</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>25</td><td>num_compare_den_bos</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.78 → <span class="gain">0.92</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.67</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>26</td><td>num_team_total_rebounds</td><td>sql</td><td>0.59 → <span class="loss">0.00</span></td><td>0.89 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">bug nom équipe</span></td></tr>
-  <tr><td>27</td><td>num_team_top_pts</td><td>sql</td><td>1.00 → <span class="flat">1.00</span></td><td>0.97 → <span class="flat">0.96</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>28</td><td>num_team_top_reb</td><td>sql</td><td>0.25 → <span class="gain">1.00</span></td><td>0.87 → <span class="flat">0.85</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>29</td><td>num_top10_points_sum</td><td>sql</td><td>0.22 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.96</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>30</td><td>num_sga_ppg</td><td>sql</td><td>0.67 → <span class="gain">1.00</span></td><td>0.88 → <span class="gain">0.99</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="vnote">artefact (div. entière)</span></td></tr>
-  <tr><td>31</td><td>noisy_3pct</td><td>sql</td><td>0.29 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.88</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>32</td><td>noisy_count</td><td>sql</td><td>0.44 → <span class="gain">1.00</span></td><td>0.85 → <span class="flat">0.84</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>33</td><td>noisy_top_scorer</td><td>sql</td><td>0.44 → <span class="gain">1.00</span></td><td>0.79 → <span class="flat">0.75</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>34</td><td>noisy_rebounds</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.62 → <span class="gain">0.75</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>35</td><td>noisy_steals</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.85</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>36</td><td>noisy_blocks</td><td>sql</td><td>0.04 → <span class="gain">1.00</span></td><td>0.73 → <span class="flat">0.76</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>37</td><td>noisy_assists</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.72 → <span class="gain">0.86</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>38</td><td>noisy_3pm</td><td>sql</td><td>0.33 → <span class="gain">1.00</span></td><td>0.72 → <span class="flat">0.75</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>39</td><td>noisy_td3</td><td>sql</td><td>0.38 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">0.89</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="vnote">F↓, ctx↑</span></td></tr>
-  <tr><td>40</td><td>noisy_team_pts</td><td>sql</td><td>0.75 → <span class="gain">1.00</span></td><td>0.75 → <span class="flat">0.79</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>41</td><td>oob_last5</td><td>sql†</td><td>0.18 → <span class="gain">0.75</span></td><td>0.77 → <span class="gain">0.94</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="loss">confabulation</span></td></tr>
-  <tr><td>42</td><td>oob_home_away</td><td>sql†</td><td>0.00 → <span class="gain">0.50</span></td><td>0.85 → <span class="gain">0.91</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
-  <tr><td>43</td><td>oob_playoffs</td><td>sql†</td><td>0.58 → <span class="gain">1.00</span></td><td>0.88 → <span class="gain">0.95</span></td><td>0.33 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
-  <tr><td>44</td><td>oob_vs_opponent</td><td>sql†</td><td>0.40 → <span class="loss">0.25</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
-  <tr><td>45</td><td>oob_quarter</td><td>sql†</td><td>0.45 → <span class="gain">1.00</span></td><td>0.83 → <span class="gain">0.88</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
-  <tr><td>46</td><td>oob_clutch</td><td>sql†</td><td>0.21 → <span class="loss">0.00</span></td><td>0.76 → <span class="gain">0.93</span></td><td>0.20 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
-  <tr><td>47</td><td>oob_salary</td><td>sql†</td><td>0.00 → <span class="flat">0.00</span></td><td>0.88 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
-  <tr><td>48</td><td>oob_month</td><td>sql†</td><td>0.12 → <span class="loss">0.00</span></td><td>0.83 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
-  <tr><td>49</td><td>oob_height</td><td>sql†</td><td>0.00 → <span class="gain">0.50</span></td><td>0.71 → <span class="gain">0.94</span></td><td>1.00 → <span class="flat">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
-  <tr><td>50</td><td>oob_streak</td><td>both†</td><td>0.08 → <span class="gain">1.00</span></td><td>0.86 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
-  <tr><td>51</td><td>mix_sga</td><td>both</td><td>0.80 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.81</span></td><td>1.00 → <span class="loss">0.17</span></td><td>0.50 → <span class="gain">1.00</span></td><td><span class="vnote">CP↓ (réf. composée)</span></td></tr>
-  <tr><td>52</td><td>mix_cade</td><td>both</td><td>0.00 → <span class="gain">0.56</span></td><td>0.81 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>53</td><td>mix_haliburton</td><td>both</td><td>0.60 → <span class="gain">1.00</span></td><td>0.85 → <span class="gain">0.95</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.50 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>54</td><td>mix_edwards</td><td>both</td><td>0.30 → <span class="gain">0.78</span></td><td>0.84 → <span class="gain">0.92</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>55</td><td>mix_siakam</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.81 → <span class="gain">0.92</span></td><td>0.00 → <span class="gain">0.11</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>56</td><td>mix_trae</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>57</td><td>mix_lebron</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.85</span></td><td>0.00 → <span class="gain">0.14</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>58</td><td>mix_curry</td><td>both</td><td>0.08 → <span class="gain">0.50</span></td><td>0.78 → <span class="gain">0.83</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.50 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>59</td><td>mix_franz</td><td>both</td><td>0.00 → <span class="gain">0.50</span></td><td>0.84 → <span class="flat">0.82</span></td><td>0.00 → <span class="gain">0.42</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
-  <tr><td>60</td><td>mix_randle</td><td>sql</td><td>0.57 → <span class="loss">0.00</span></td><td>0.92 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.50 → <span class="flat">0.50</span></td><td><span class="loss">routé SQL, texte raté</span></td></tr>
+  <tr class="cat-txt"><td>1</td><td>txt_impressive_duo</td><td>rag</td><td>0.70 → <span class="gain">1.00</span></td><td>0.93 → <span class="loss">0.84</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="vnote">juste, CP 0 (OCR)</span></td></tr>
+  <tr class="cat-txt"><td>2</td><td>txt_reggie_miller</td><td>rag</td><td>1.00 → <span class="flat">1.00</span></td><td>0.83 → <span class="flat">0.86</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
+  <tr class="cat-txt"><td>3</td><td>txt_nba_marketing</td><td>rag</td><td>1.00 → <span class="flat">1.00</span></td><td>0.96 → <span class="flat">0.91</span></td><td>0.92 → <span class="flat">0.92</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
+  <tr class="cat-txt"><td>4</td><td>txt_homecourt_analogy</td><td>rag</td><td>0.19 → <span class="gain">0.67</span></td><td>0.90 → <span class="flat">0.94</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-txt"><td>5</td><td>txt_randle_revelation</td><td>rag</td><td>0.12 → <span class="gain">1.00</span></td><td>0.92 → <span class="loss">0.72</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="vnote">juste, CR 0 (OCR)</span></td></tr>
+  <tr class="cat-txt"><td>6</td><td>txt_cade_pick</td><td>rag</td><td>0.53 → <span class="loss">0.00</span></td><td>0.98 → <span class="flat">0.97</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="vnote">juste, F 0 (OCR)</span></td></tr>
+  <tr class="cat-txt"><td>7</td><td>txt_popularity_contest</td><td>rag</td><td>0.87 → <span class="gain">1.00</span></td><td>0.83 → <span class="flat">0.86</span></td><td>0.87 → <span class="flat">0.87</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
+  <tr class="cat-txt"><td>8</td><td>txt_finalists_snoozefest</td><td>rag</td><td>0.40 → <span class="gain">0.89</span></td><td>0.91 → <span class="flat">0.95</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-txt"><td>9</td><td>txt_reggie_allstar*</td><td>sql</td><td>0.62 → <span class="gain">1.00</span></td><td>0.86 → <span class="loss">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="loss">mal routé SQL</span></td></tr>
+  <tr class="cat-txt"><td>10</td><td>txt_1995_rockets</td><td>rag</td><td>0.26 → <span class="gain">1.00</span></td><td>0.76 → <span class="gain">0.93</span></td><td>0.50 → <span class="flat">0.50</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>11</td><td>num_best_3pct</td><td>sql</td><td>0.06 → <span class="gain">1.00</span></td><td>0.81 → <span class="gain">0.97</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>12</td><td>num_best_ftpct</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.95 → <span class="flat">0.97</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>13</td><td>num_top_points</td><td>sql</td><td>0.64 → <span class="gain">1.00</span></td><td>0.94 → <span class="flat">0.95</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="flat">—</span></td></tr>
+  <tr class="cat-num"><td>14</td><td>num_top_rebounds</td><td>sql</td><td>0.56 → <span class="gain">1.00</span></td><td>0.85 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>15</td><td>num_top_assists</td><td>sql</td><td>0.46 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>16</td><td>num_top_steals</td><td>sql</td><td>0.50 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>17</td><td>num_top_blocks</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.92</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>18</td><td>num_top_td3</td><td>sql</td><td>0.50 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.94</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>19</td><td>num_second_scorer</td><td>sql</td><td>0.62 → <span class="gain">1.00</span></td><td>0.82 → <span class="loss">0.77</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>20</td><td>num_third_rebounds</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.94 → <span class="flat">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>21</td><td>num_count_over_2000</td><td>sql</td><td>0.33 → <span class="gain">1.00</span></td><td>0.97 → <span class="flat">0.98</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>22</td><td>num_count_ast_500</td><td>sql</td><td>0.38 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>23</td><td>num_best_plusminus</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.73 → <span class="gain">0.94</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>24</td><td>num_compare_okc_min</td><td>sql</td><td>0.25 → <span class="gain">1.00</span></td><td>0.76 → <span class="gain">0.81</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.67</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>25</td><td>num_compare_den_bos</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.78 → <span class="gain">0.92</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">0.67</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>26</td><td>num_team_total_rebounds</td><td>sql</td><td>0.59 → <span class="loss">0.00</span></td><td>0.89 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">bug nom équipe</span></td></tr>
+  <tr class="cat-num"><td>27</td><td>num_team_top_pts</td><td>sql</td><td>1.00 → <span class="flat">1.00</span></td><td>0.97 → <span class="flat">0.96</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>28</td><td>num_team_top_reb</td><td>sql</td><td>0.25 → <span class="gain">1.00</span></td><td>0.87 → <span class="flat">0.85</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>29</td><td>num_top10_points_sum</td><td>sql</td><td>0.22 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.96</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>30</td><td>num_sga_ppg</td><td>sql</td><td>0.67 → <span class="gain">1.00</span></td><td>0.88 → <span class="gain">0.99</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="vnote">artefact (div. entière)</span></td></tr>
+  <tr class="cat-num"><td>31</td><td>noisy_3pct</td><td>sql</td><td>0.29 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.88</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>32</td><td>noisy_count</td><td>sql</td><td>0.44 → <span class="gain">1.00</span></td><td>0.85 → <span class="flat">0.84</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>33</td><td>noisy_top_scorer</td><td>sql</td><td>0.44 → <span class="gain">1.00</span></td><td>0.79 → <span class="flat">0.75</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>34</td><td>noisy_rebounds</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.62 → <span class="gain">0.75</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>35</td><td>noisy_steals</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.85</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>36</td><td>noisy_blocks</td><td>sql</td><td>0.04 → <span class="gain">1.00</span></td><td>0.73 → <span class="flat">0.76</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>37</td><td>noisy_assists</td><td>sql</td><td>0.00 → <span class="gain">1.00</span></td><td>0.72 → <span class="gain">0.86</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>38</td><td>noisy_3pm</td><td>sql</td><td>0.33 → <span class="gain">1.00</span></td><td>0.72 → <span class="flat">0.75</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-num"><td>39</td><td>noisy_td3</td><td>sql</td><td>0.38 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">0.89</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="vnote">F↓, ctx↑</span></td></tr>
+  <tr class="cat-num"><td>40</td><td>noisy_team_pts</td><td>sql</td><td>0.75 → <span class="gain">1.00</span></td><td>0.75 → <span class="flat">0.79</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-oob"><td>41</td><td>oob_last5</td><td>sql†</td><td>0.18 → <span class="gain">0.75</span></td><td>0.77 → <span class="gain">0.94</span></td><td>1.00 → <span class="flat">1.00</span></td><td>1.00 → <span class="flat">1.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr class="cat-oob"><td>42</td><td>oob_home_away</td><td>sql†</td><td>0.00 → <span class="gain">0.50</span></td><td>0.85 → <span class="gain">0.91</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr class="cat-oob"><td>43</td><td>oob_playoffs</td><td>sql†</td><td>0.58 → <span class="gain">1.00</span></td><td>0.88 → <span class="gain">0.95</span></td><td>0.33 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr class="cat-oob"><td>44</td><td>oob_vs_opponent</td><td>sql†</td><td>0.40 → <span class="loss">0.25</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
+  <tr class="cat-oob"><td>45</td><td>oob_quarter</td><td>sql†</td><td>0.45 → <span class="gain">1.00</span></td><td>0.83 → <span class="gain">0.88</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr class="cat-oob"><td>46</td><td>oob_clutch</td><td>sql†</td><td>0.21 → <span class="loss">0.00</span></td><td>0.76 → <span class="gain">0.93</span></td><td>0.20 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr class="cat-oob"><td>47</td><td>oob_salary</td><td>sql†</td><td>0.00 → <span class="flat">0.00</span></td><td>0.88 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
+  <tr class="cat-oob"><td>48</td><td>oob_month</td><td>sql†</td><td>0.12 → <span class="loss">0.00</span></td><td>0.83 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>1.00 → <span class="loss">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
+  <tr class="cat-oob"><td>49</td><td>oob_height</td><td>sql†</td><td>0.00 → <span class="gain">0.50</span></td><td>0.71 → <span class="gain">0.94</span></td><td>1.00 → <span class="flat">1.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="loss">confabulation</span></td></tr>
+  <tr class="cat-oob"><td>50</td><td>oob_streak</td><td>both†</td><td>0.08 → <span class="gain">1.00</span></td><td>0.86 → <span class="loss">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="flat">0.00</span></td><td><span class="gain">refus honnête</span></td></tr>
+  <tr class="cat-mix"><td>51</td><td>mix_sga</td><td>both</td><td>0.80 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.81</span></td><td>1.00 → <span class="loss">0.17</span></td><td>0.50 → <span class="gain">1.00</span></td><td><span class="vnote">CP↓ (réf. composée)</span></td></tr>
+  <tr class="cat-mix"><td>52</td><td>mix_cade</td><td>both</td><td>0.00 → <span class="gain">0.56</span></td><td>0.81 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-mix"><td>53</td><td>mix_haliburton</td><td>both</td><td>0.60 → <span class="gain">1.00</span></td><td>0.85 → <span class="gain">0.95</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.50 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-mix"><td>54</td><td>mix_edwards</td><td>both</td><td>0.30 → <span class="gain">0.78</span></td><td>0.84 → <span class="gain">0.92</span></td><td>0.00 → <span class="flat">0.00</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-mix"><td>55</td><td>mix_siakam</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.81 → <span class="gain">0.92</span></td><td>0.00 → <span class="gain">0.11</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-mix"><td>56</td><td>mix_trae</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="gain">0.93</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-mix"><td>57</td><td>mix_lebron</td><td>both</td><td>0.00 → <span class="gain">1.00</span></td><td>0.84 → <span class="flat">0.85</span></td><td>0.00 → <span class="gain">0.14</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-mix"><td>58</td><td>mix_curry</td><td>both</td><td>0.08 → <span class="gain">0.50</span></td><td>0.78 → <span class="gain">0.83</span></td><td>0.00 → <span class="gain">0.17</span></td><td>0.50 → <span class="gain">1.00</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-mix"><td>59</td><td>mix_franz</td><td>both</td><td>0.00 → <span class="gain">0.50</span></td><td>0.84 → <span class="flat">0.82</span></td><td>0.00 → <span class="gain">0.42</span></td><td>0.00 → <span class="gain">0.50</span></td><td><span class="badge ok">✅</span></td></tr>
+  <tr class="cat-mix"><td>60</td><td>mix_randle</td><td>sql</td><td>0.57 → <span class="loss">0.00</span></td><td>0.92 → <span class="loss">0.00</span></td><td>0.00 → <span class="gain">1.00</span></td><td>0.50 → <span class="flat">0.50</span></td><td><span class="loss">routé SQL, texte raté</span></td></tr>
 </table>
 <p style="font-size:.85rem;color:var(--muted)">* question texte mal routée vers SQL · † hors_couverture parti en SQL (attendu : refus). F = faithfulness · AR = answer_relevancy · CP = context_precision · CR = context_recall.<br>
 <b>Verdict :</b> <span class="badge ok">✅</span> amélioration nette · <span class="flat">—</span> stable · <span class="loss">texte rouge</span> régression · <span class="vnote">gris italique</span> nuance (métrique trompeuse). Pour les questions hors périmètre (†, hors moyennes) : <span class="gain">refus honnête</span> vs <span class="loss">confabulation</span>.</p>
@@ -499,20 +510,6 @@ perte de qualité de réponse.</p>
   français, les chunks en anglais OCRisé bruité, et le petit juge n'apparie pas les deux — <span class="who judge">faux négatif du
   juge</span>. L'AR baisse même, le juge ayant trouvé la baseline <i>fausse mais confiante</i> plus « pertinente ».
   <b>Réponse meilleure, score aveugle.</b></p>
-</div>
-
-<div class="qcard meh">
-  <h3>Bonne réponse, faithfulness 0 · txt_cade_pick <span class="badge meh">⚠️ « régression » = artefact OCR</span></h3>
-  <div class="qorig"><b>Question :</b> « De quel joueur des Pistons dit-on qu'il justifie son statut de premier choix de la draft 2021, malgré trop de pertes de balle ? » <span style="color:var(--muted)">· réf. : Cade Cunningham</span></div>
-  <div class="answers">
-    <div class="ans base"><span class="lab">baseline (RAG)</span>Le joueur… est <b>Jaden Ivey</b>. Pourquoi Ivey ? Son potentiel avant sa blessure… <i>(mauvais joueur)</i></div>
-    <div class="ans v2"><span class="lab">enrichi (RAG verbatim)</span><b>Cade Cunningham</b> est le joueur des Pistons cité comme justifiant son statut de premier choix 2021, malgré des critiques sur ses pertes de balle.</div>
-  </div>
-  <div class="scores">F 0.53→<b>0.00</b> · AR 0.98→0.97 · CP 0.00→0.00 · CR 0.00→0.00</div>
-  <p><b>La baseline se trompe</b> (Ivey). L'assistant donne le <b>bon joueur</b> (Cade) — mais faithfulness <b>0.00</b>. Le contexte
-  récupéré est du <b>charabia OCR</b> (fragments de threads mêlés, pseudos, timestamps) où la preuve n'est pas exploitable : le juge ne
-  peut pas <b>ancrer</b> la bonne réponse, alors que la réponse fausse d'Ivey était un peu plus « ancrée » (0.53). Le tableau affiche donc
-  « régression » <b>alors que la réponse est meilleure</b> — un <b>artefact du bruit OCR</b>, pas une perte de qualité.</p>
 </div>
 
 <div class="qcard ko">

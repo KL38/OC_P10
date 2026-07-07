@@ -95,36 +95,82 @@ Trois systèmes mesurés pour isoler chaque effet :
 ## 🏗️ Architecture
 
 ```mermaid
-flowchart TB
-    subgraph SRC["📁 data/"]
-        PDF["Match 1-4.pdf<br/>threads Reddit (OCR)"]
-        XLS["regular+NBA.xlsx<br/>stats de saison"]
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Segoe UI, system-ui, sans-serif","fontSize":"13px","primaryColor":"#ffffff","primaryTextColor":"#1c2333","primaryBorderColor":"#94a3b8","lineColor":"#64748b","edgeLabelBackground":"#f1f5f9","clusterBkg":"#f8fafc","clusterBorder":"#cbd5e1"},"flowchart":{"curve":"basis","nodeSpacing":45,"rankSpacing":55}}}%%
+flowchart TD
+    %% ============ 1. PRÉPARATION (hors-ligne) ============
+    subgraph PREP["🛠️ PRÉPARATION — hors-ligne, scripts « un seul run »"]
+        direction TB
+        subgraph DBL["scripts/load_excel_to_db.py"]
+            direction TB
+            XLS["📊 <b>regular+NBA.xlsx</b><br/><i>feuilles Equipe · Données NBA</i>"]
+            READ["<b>Lecture pandas</b><br/><i>header=1 · quirks du classeur</i>"]
+            VALID["<b>Validation Pydantic</b><br/><i>TeamRow / PlayerRow · fail-fast</i>"]
+            DDL["<b>Insertion SQLAlchemy</b><br/><i>drop/create + intégrité référentielle</i>"]
+            XLS --> READ --> VALID --> DDL
+        end
+        subgraph IDX["scripts/build_index.py"]
+            direction TB
+            PDF["📄 <b>4 PDF Match</b><br/><i>threads Reddit scannés</i>"]
+            LOAD["<b>OCR EasyOCR</b><br/><i>lazy · GPU</i>"]
+            SPLIT["<b>LangChain Chunking 1500 / 150</b><br/><i>RecursiveCharacterTextSplitter</i>"]
+            EMB1["<b>Embeddings</b> · 🧠 <b>mistral-embed</b><br/><i>batch · throttle · retry 429</i>"]
+            FAISSB["<b>Index FAISS</b> · cosinus<br/><i>IndexFlatIP + normalize_L2</i>"]
+            PDF --> LOAD --> SPLIT --> EMB1 --> FAISSB
+        end
     end
 
-    PDF -->|"build_index.py<br/>OCR + chunking"| FAISS[("FAISS<br/>index vectoriel")]
-    XLS -.->|"aplati (baseline)"| FAISS
-    XLS -->|"load_excel_to_db.py<br/>validation Pydantic"| DB[("SQL<br/>PostgreSQL / SQLite<br/>teams · players")]
+    %% ============ 2. ARTEFACTS PERSISTÉS ============
+    SQLDB[("🗄️ <b>PostgreSQL / Supabase</b><br/><i>players · teams — fallback SQLite</i>")]
+    VDB[("📦 <b>vector_db/</b><br/><i>faiss_index.idx · chunks.jsonl</i>")]
+    DDL --> SQLDB
+    FAISSB --> VDB
 
-    Q(["❓ Question"]) --> AGENT
+    %% ============ 3. RUNTIME (1 question) ============
+    subgraph RUN["⚡ RUNTIME — 1 question"]
+        direction TB
+        TSQL["🗃️ <b>query_player_stats</b><br/>NL→SQL · 🧠 <b>mistral-small</b><br/><i>few-shot · ensure_read_only</i><br/><b>LangChain SQLDatabase · SQLAlchemy</b>"]
+        TRAG["🔎 <b>search_match_commentary</b><br/>top-k 5 · 🧠 <b>mistral-embed</b><br/><i>question verbatim</i>"]
+        AGENT{{"🤖 <b>Agent Pydantic AI</b><br/><b>routing + synthèse</b><br/><i>🧠 mistral-small · endpoint OpenAI-compat</i>"}}
+        UI["💬 <b>Streamlit</b><br/><i>streamlit_app.py</i>"]
+        USER(["👤 <b>Utilisateur</b>"])
 
-    subgraph AGENT["🤖 Agent Pydantic AI — routing"]
-        RAGT["🔎 tool RAG<br/>commentaires"]
-        SQLT["🗃️ tool SQL<br/>SELECT only"]
+        TSQL <-->|"chiffres · stats · agrégats"| AGENT
+        TRAG <-->|"texte · opinions · débats"| AGENT
+        AGENT -->|"<b>RagAnswer</b><br/><i>answer · sources · used_tool</i>"| UI
+        UI -->|"question"| AGENT
+        UI -->|"réponse + badge outil"| USER
+        USER -->|"question"| UI
     end
 
-    FAISS --> RAGT
-    DB --> SQLT
-    AGENT --> ANS["✅ RagAnswer<br/>réponse + sources + outil utilisé"]
-    ANS --> UI["💬 Streamlit"]
+    SQLDB -. "rôle SELECT-only" .-> TSQL
+    VDB -. "chargé au démarrage" .-> TRAG
 
-    QSET["questions.yaml<br/>(60 questions)"] -.->|"evaluate_ragas.py"| RAGAS["📏 RAGAS<br/>4 métriques"]
-    AGENT -.-> RAGAS
-    RAGAS -.-> REP["eval/reports/<br/>comparatif HTML"]
+    %% ============ STYLES ============
+    classDef data fill:#f1f5f9,stroke:#94a3b8,color:#1c2333;
+    classDef step fill:#ffffff,stroke:#94a3b8,color:#1c2333;
+    classDef model fill:#fff3cd,stroke:#e0a800,stroke-width:2px,color:#1c2333;
+    classDef store fill:#ffedd5,stroke:#ea580c,stroke-width:2px,color:#431407;
+    classDef user fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14431f;
+    classDef ui fill:#e0f2fe,stroke:#0284c7,color:#0c3550;
 
-    MISTRAL["Mistral<br/>génération + juge"] -.- AGENT
-    MISTRAL -.- RAGAS
-    LOGFIRE["Logfire<br/>traces"] -.- AGENT
+    class PDF,XLS data;
+    class LOAD,SPLIT,READ,VALID,DDL,FAISSB step;
+    class EMB1,TRAG,TSQL,AGENT model;
+    class VDB,SQLDB store;
+    class USER user;
+    class UI ui;
+    style AGENT stroke-width:3px
+
+    style PREP fill:#f8fafc,stroke:#cbd5e1,stroke-width:1.5px
+    style DBL fill:#ffffff,stroke:#dbe3ee
+    style IDX fill:#ffffff,stroke:#dbe3ee
+    style RUN fill:#eff6ff,stroke:#93c5fd,stroke-width:1.5px
+
+    linkStyle 15,16 stroke:#ea580c,stroke-width:1.5px
 ```
+
+> 🟡 nœud jaune = appel Mistral · 🟠 cylindre orange = stockage persistant ·
+> pointillés orange = artefact construit hors-ligne, consommé au runtime.
 
 **Sécurité DB** : l'application tourne avec un rôle **SELECT-only**
 (`DATABASE_URL_READONLY`) ; seul le script de chargement utilise le rôle admin.
@@ -173,8 +219,9 @@ Copy-Item .env.example .env
 
 ```powershell
 # 3. Construire l'index vectoriel (OCR des PDF + embeddings)
+# index complet (PDF + Excel aplati) — requis pour les runs RAGAS baseline/enriched :
 uv run python scripts/build_index.py
-# variante PDF-only pour enriched_v2 (Excel exclu du retrieval texte) :
+# index PDF-only — requis par l'app Streamlit et le run enriched_v2 :
 uv run python scripts/build_index.py --pdf-only
 
 # 4. Charger les stats Excel dans la base SQL
