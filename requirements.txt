@@ -446,7 +446,7 @@ pygments==2.20.0
     #   rich
 pymupdf==1.27.2.3
     # via oc-p10
-pypdf==6.13.1
+pypdf==6.13.3
     # via oc-p10
 pytest==9.0.3
     # via pytest-cov
