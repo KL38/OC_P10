@@ -1,7 +1,7 @@
 """Document loading & text extraction (ported from the prototype).
 
 Faithful port of ``brief/P10_DSML/utils/data_loader.py``: every extractor is
-kept (PDF / DOCX / TXT / CSV / Excel / ZIP). Two minimal, output-neutral changes:
+kept (PDF / DOCX / TXT / CSV / Excel). Two minimal, output-neutral changes:
 
 1. **OCR is lazy-loaded.** The prototype initialised EasyOCR *at import time*
    (pulling ~GB of models and slowing every startup / test). Here the reader is
@@ -10,8 +10,8 @@ kept (PDF / DOCX / TXT / CSV / Excel / ZIP). Two minimal, output-neutral changes
    maintained successor with an identical ``PdfReader`` API — same extraction
    method, just the living package.
 
-Heavy/optional libraries (pypdf, pandas, python-docx, easyocr, requests) are
-imported *inside* their functions so a missing one only disables that one path.
+Heavy/optional libraries (pypdf, pandas, python-docx, easyocr) are imported
+*inside* their functions so a missing one only disables that one path.
 """
 
 from __future__ import annotations
@@ -175,30 +175,6 @@ def extract_text_from_excel(file_path: str) -> str | dict[str, str] | None:
 
 
 # --- Loaders ------------------------------------------------------------
-
-def download_and_extract_zip(url: str, output_dir: str) -> bool:
-    """Download a ZIP from ``url`` and extract it into ``output_dir``."""
-    if not url:
-        logger.warning("No URL provided for download.")
-        return False
-    try:
-        import io
-        import zipfile
-
-        import requests
-
-        logger.info("Downloading data from %s...", url)
-        response = requests.get(url, stream=True, timeout=60)
-        response.raise_for_status()
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(io.BytesIO(response.content)) as z:
-            z.extractall(output_dir)
-        logger.info("Download and extraction complete.")
-        return True
-    except Exception as exc:  # noqa: BLE001
-        logger.error("Download/extraction failed: %s", exc)
-        return False
-
 
 # Maps a file suffix to its extractor.
 _EXTRACTORS = {
