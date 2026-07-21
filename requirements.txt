@@ -381,7 +381,7 @@ pandas==3.0.3
     #   datasets
     #   oc-p10
     #   streamlit
-pillow==12.2.0
+pillow==12.3.0
     # via
     #   easyocr
     #   imageio
