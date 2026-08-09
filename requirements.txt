@@ -105,7 +105,7 @@ genai-prices==0.0.65
     # via pydantic-ai-slim
 gitdb==4.0.12
     # via gitpython
-gitpython==3.1.50
+gitpython==3.1.58
     # via streamlit
 googleapis-common-protos==1.75.0
     # via opentelemetry-exporter-otlp-proto-http
